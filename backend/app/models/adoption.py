@@ -23,3 +23,5 @@ class Adoption(Base):
     tree: Mapped["Tree"] = relationship("Tree", back_populates="adoptions")
     ceremony: Mapped[Optional["Ceremony"]] = relationship("Ceremony", back_populates="adoption", uselist=False, cascade="all, delete-orphan")
     memories: Mapped[List["TreeMemory"]] = relationship("TreeMemory", back_populates="adoption", cascade="all, delete-orphan")
+    payment: Mapped[Optional["Payment"]] = relationship("Payment", back_populates="adoption", uselist=False)
+    commission: Mapped[Optional["Commission"]] = relationship("Commission", back_populates="adoption", uselist=False, cascade="all, delete-orphan")

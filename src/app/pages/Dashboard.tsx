@@ -1,10 +1,4 @@
-{
-  "name": "edit_existing_file",
-  "arguments": {
-    "filepath": "src/components/Menu.js",
-    "changes": "// ... existing code ...\n\nuseEffect(() => {\n  fetchData();\n}, [activePage]);\n\n// ... rest of code ..."
-  }
-}import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';

@@ -1,9 +1,8 @@
 import json
 import logging
+import asyncio
 from typing import Dict, List, Set
 from fastapi import WebSocket
-import redis.asyncio as redis
-from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -13,10 +12,6 @@ class ConnectionManager:
         self.active_user_connections: Dict[str, Set[WebSocket]] = {}
         # Active connections mapped by adoption_id -> set of WebSockets
         self.active_adoption_connections: Dict[str, Set[WebSocket]] = {}
-        
-        # Redis connection for Pub/Sub
-        self.redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
-        self.pubsub = None
 
     async def connect_user(self, user_id: str, websocket: WebSocket):
         await websocket.accept()
@@ -88,39 +83,30 @@ class ConnectionManager:
         for adoption_id in list(self.active_adoption_connections.keys()):
             await self.send_to_adoption(adoption_id, message)
 
-    # Publish an event to Redis so other app instances can receive and broadcast it
+    # Publish an event (in-memory only for single instance)
     async def publish_event(self, channel: str, event_type: str, data: dict):
+        # For single-instance development, directly broadcast
         payload = {
             "event": event_type,
             "data": data
         }
-        await self.redis_client.publish(channel, json.dumps(payload))
-
-    # Listen to Redis Pub/Sub channel and broadcast matching events
-    async def start_redis_listener(self):
-        self.pubsub = self.redis_client.pubsub()
-        await self.pubsub.subscribe("websocket_global", "websocket_users", "websocket_adoptions")
-        logger.info("Subscribed to Redis WebSocket channels.")
         
-        async for message in self.pubsub.listen():
-            if message["type"] == "message":
-                try:
-                    channel = message["channel"]
-                    payload = json.loads(message["data"])
-                    event = payload.get("event")
-                    data = payload.get("data", {})
-                    
-                    if channel == "websocket_global":
-                        await self.broadcast(payload)
-                    elif channel == "websocket_users":
-                        user_id = data.get("user_id")
-                        if user_id:
-                            await self.send_to_user(user_id, payload)
-                    elif channel == "websocket_adoptions":
-                        adoption_id = data.get("adoption_id")
-                        if adoption_id:
-                            await self.send_to_adoption(adoption_id, payload)
-                except Exception as e:
-                    logger.error(f"Error handling Redis Pub/Sub message: {e}")
+        if channel == "websocket_global":
+            await self.broadcast(payload)
+        elif channel == "websocket_users":
+            user_id = data.get("user_id")
+            if user_id:
+                await self.send_to_user(user_id, payload)
+        elif channel == "websocket_adoptions":
+            adoption_id = data.get("adoption_id")
+            if adoption_id:
+                await self.send_to_adoption(adoption_id, payload)
+
+    # Placeholder for Redis listener (not needed for single instance)
+    async def start_redis_listener(self):
+        logger.info("Redis listener disabled (using in-memory mode).")
+        # Keep task alive but do nothing
+        while True:
+            await asyncio.sleep(3600)
 
 manager = ConnectionManager()

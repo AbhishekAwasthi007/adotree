@@ -1,12 +1,12 @@
 import random
 import logging
-import redis.asyncio as redis
-from app.core.config import settings
+import time
+from typing import Dict, Tuple
 
 logger = logging.getLogger(__name__)
 
-# Redis client for OTP sessions
-redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+# In-memory OTP storage for development (mobile -> (otp, expiry_timestamp))
+_otp_store: Dict[str, Tuple[str, float]] = {}
 
 class OTPService:
     @staticmethod
@@ -14,9 +14,9 @@ class OTPService:
         # Generate 6 digit OTP
         otp = f"{random.randint(100000, 999999)}"
         
-        # Save in Redis with 5 minute expiration
-        redis_key = f"otp:{mobile}"
-        await redis_client.setex(redis_key, 300, otp)
+        # Save in memory with 5 minute expiration
+        expiry = time.time() + 300  # 5 minutes from now
+        _otp_store[mobile] = (otp, expiry)
         
         # Log it in developer environment (so user can see it in terminal or swagger response)
         logger.warning(f"🚀 OTP GENERATED FOR {mobile}: {otp} (Expires in 5 minutes)")
@@ -30,15 +30,19 @@ class OTPService:
 
     @staticmethod
     async def verify_otp(mobile: str, otp: str) -> bool:
-        redis_key = f"otp:{mobile}"
-        saved_otp = await redis_client.get(redis_key)
+        if mobile not in _otp_store:
+            return False
         
-        if not saved_otp:
+        saved_otp, expiry = _otp_store[mobile]
+        
+        # Check if OTP has expired
+        if time.time() > expiry:
+            del _otp_store[mobile]
             return False
             
         if saved_otp == otp:
             # Delete OTP after successful verification to prevent reuse
-            await redis_client.delete(redis_key)
+            del _otp_store[mobile]
             return True
             
         return False

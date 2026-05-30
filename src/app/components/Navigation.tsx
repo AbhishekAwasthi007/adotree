@@ -4,19 +4,14 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Leaf, User, Menu, X, TreePine, MessageSquare, ChevronDown,
   Grid, Award, Users, ClipboardList, DollarSign, Settings,
-  Globe, Check,
+  Globe, Check, BarChart3, CreditCard, FileText,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const FARMER_MENU = [
   { id: 'dashboard',  label: 'Dashboard',       icon: <Grid className="w-4 h-4" /> },
-  { id: 'trees',      label: 'My Trees',         icon: <TreePine className="w-4 h-4" /> },
-  { id: 'adoptions',  label: 'Adoptions',        icon: <Users className="w-4 h-4" /> },
   { id: 'harvests',   label: 'Harvests',         icon: <Award className="w-4 h-4" /> },
   { id: 'deliveries', label: 'Deliveries',       icon: <ClipboardList className="w-4 h-4" /> },
-  { id: 'wallet',     label: 'Wallet & Payouts', icon: <DollarSign className="w-4 h-4" /> },
-  { id: 'chat',       label: 'Adopter Chats',    icon: <MessageSquare className="w-4 h-4" /> },
-  { id: 'settings',   label: 'Settings',         icon: <Settings className="w-4 h-4" /> },
 ];
 
 const LANGUAGES = [
@@ -38,7 +33,8 @@ export function Navigation() {
   const navigate = useNavigate();
 
   const isHome = location.pathname === '/';
-  const isFarmer = user?.role === 'farmer' || user?.role === 'admin';
+  const isFarmer = user?.role === 'farmer';
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -74,7 +70,7 @@ export function Navigation() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
+          <Link to={isAuthenticated && (isFarmer || isAdmin) ? "/dashboard" : "/"} className="flex items-center gap-3 group flex-shrink-0">
             <motion.div whileHover={{ rotate: 360, scale: 1.1 }} transition={{ duration: 0.6 }} className="relative">
               <Leaf className="w-8 h-8 text-[var(--forest-green)]" />
               <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }}
@@ -86,73 +82,93 @@ export function Navigation() {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-6">
-            <NavLink to="/explore">Explore Trees</NavLink>
-            <NavLink to="/sustainability">Sustainability</NavLink>
+            {!(isAuthenticated && (isFarmer || isAdmin)) && (
+              <>
+                <NavLink to="/explore">Explore Trees</NavLink>
+                <NavLink to="/sustainability">Sustainability</NavLink>
+              </>
+            )}
 
-            {/* Farmer dropdown */}
+            {/* Admin menu */}
+            {isAuthenticated && isAdmin && (
+              <>
+                <NavLink to="/dashboard">Admin Dashboard</NavLink>
+                <NavLink to="/admin/transactions">Transaction & Bank</NavLink>
+                <NavLink to="/admin/articles">Articles/Blog</NavLink>
+              </>
+            )}
+
+            {/* Farmer direct links */}
             {isAuthenticated && isFarmer && (
-              <div ref={farmerMenuRef} className="relative">
+              <>
                 <button
-                  onClick={() => setFarmerMenuOpen(v => !v)}
-                  className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
-                    farmerMenuOpen ? 'text-[var(--forest-green)]' : 'text-[var(--earth-brown)] hover:text-[var(--forest-green)]'
-                  }`}
+                  onClick={() => handleFarmerNav('dashboard')}
+                  className="text-sm font-medium text-[var(--earth-brown)] hover:text-[var(--forest-green)] transition-colors"
                 >
-                  <TreePine className="w-4 h-4" />
-                  Farm OS
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${farmerMenuOpen ? 'rotate-180' : ''}`} />
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => handleFarmerNav('harvests')}
+                  className="text-sm font-medium text-[var(--earth-brown)] hover:text-[var(--forest-green)] transition-colors"
+                >
+                  Harvests
+                </button>
+                <button
+                  onClick={() => handleFarmerNav('deliveries')}
+                  className="text-sm font-medium text-[var(--earth-brown)] hover:text-[var(--forest-green)] transition-colors"
+                >
+                  Deliveries
                 </button>
 
-                <AnimatePresence>
-                  {farmerMenuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.97 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute top-full left-0 mt-2 w-52 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
-                    >
-                      {/* Language selector at top */}
-                      <div className="px-4 py-3 border-b border-gray-100 bg-[var(--light-sage)]/20">
-                        <p className="text-[10px] font-bold text-[var(--earth-brown)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                          <Globe className="w-3 h-3" /> Language
-                        </p>
-                        <div className="flex gap-1.5">
-                          {LANGUAGES.map(l => (
-                            <button key={l.code} onClick={() => setLang(l.code)}
-                              className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${
-                                lang === l.code
-                                  ? 'bg-[var(--forest-green)] text-white'
-                                  : 'bg-white text-[var(--earth-brown)] hover:bg-gray-50 border border-gray-200'
-                              }`}
-                            >
-                              {l.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                {/* Language dropdown */}
+                <div ref={langMenuRef} className="relative">
+                  <button
+                    onClick={() => setLangMenuOpen(v => !v)}
+                    className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
+                      langMenuOpen ? 'text-[var(--forest-green)]' : 'text-[var(--earth-brown)] hover:text-[var(--forest-green)]'
+                    }`}
+                  >
+                    <Globe className="w-4 h-4" />
+                    Language
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${langMenuOpen ? 'rotate-180' : ''}`} />
+                  </button>
 
-                      {/* Nav items */}
-                      <div className="py-1.5">
-                        {FARMER_MENU.map(item => (
-                          <button key={item.id} onClick={() => handleFarmerNav(item.id)}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--earth-brown)] hover:bg-[var(--light-sage)]/30 hover:text-[var(--forest-green)] transition-colors text-left"
+                  <AnimatePresence>
+                    {langMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute top-full right-0 mt-2 w-40 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden py-2"
+                      >
+                        {LANGUAGES.map(l => (
+                          <button
+                            key={l.code}
+                            onClick={() => {
+                              setLang(l.code);
+                              setLangMenuOpen(false);
+                            }}
+                            className={`w-full px-4 py-2.5 text-sm text-left transition-colors ${
+                              lang === l.code
+                                ? 'bg-[var(--light-sage)]/30 text-[var(--forest-green)] font-bold'
+                                : 'text-[var(--earth-brown)] hover:bg-[var(--light-sage)]/20'
+                            }`}
                           >
-                            <span className="text-[var(--forest-green)]">{item.icon}</span>
-                            {item.label}
+                            {l.label}
                           </button>
                         ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </>
             )}
           </div>
 
           {/* Right Actions */}
           <div className="hidden md:flex items-center gap-3">
-            {isAuthenticated && (
+            {isAuthenticated && !isAdmin && (
               <Link to="/chat">
                 <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}
                   className="p-2 rounded-full hover:bg-[var(--light-sage)] transition-colors"
@@ -186,16 +202,7 @@ export function Navigation() {
               </motion.button>
             )}
 
-            <Link to="/orchard">
-              <motion.button
-                whileHover={{ scale: 1.05, boxShadow: '0 10px 30px rgba(27, 67, 50, 0.3)' }}
-                whileTap={{ scale: 0.95 }}
-                className="px-5 py-2.5 bg-gradient-to-r from-[var(--forest-green)] to-[var(--leaf-green)] text-white rounded-full font-medium shadow-lg flex items-center gap-2 text-sm"
-              >
-                <TreePine className="w-4 h-4" />
-                My Orchard
-              </motion.button>
-            </Link>
+
           </div>
 
           {/* Mobile Menu Button */}
@@ -215,13 +222,50 @@ export function Navigation() {
             className="fixed inset-0 z-40 bg-white/95 backdrop-blur-xl md:hidden pt-20 overflow-y-auto"
           >
             <div className="flex flex-col gap-2 p-6">
-              <MobileNavLink to="/explore" onClick={() => setMobileMenuOpen(false)}>Explore Trees</MobileNavLink>
-              <MobileNavLink to="/sustainability" onClick={() => setMobileMenuOpen(false)}>Sustainability</MobileNavLink>
+              {!(isAuthenticated && (isFarmer || isAdmin)) && (
+                <>
+                  <MobileNavLink to="/explore" onClick={() => setMobileMenuOpen(false)}>Explore Trees</MobileNavLink>
+                  <MobileNavLink to="/sustainability" onClick={() => setMobileMenuOpen(false)}>Sustainability</MobileNavLink>
+                </>
+              )}
+
+              {isAuthenticated && isAdmin && (
+                <>
+                  <div className="border-t border-gray-100 pt-3 mt-1">
+                    <p className="text-xs font-bold text-[var(--earth-brown)] uppercase tracking-wider mb-2 px-2">Admin Menu</p>
+                    <MobileNavLink to="/dashboard" onClick={() => setMobileMenuOpen(false)}>Admin Dashboard</MobileNavLink>
+                    <MobileNavLink to="/admin/transactions" onClick={() => setMobileMenuOpen(false)}>Transaction & Bank</MobileNavLink>
+                    <MobileNavLink to="/admin/articles" onClick={() => setMobileMenuOpen(false)}>Articles/Blog</MobileNavLink>
+                  </div>
+                </>
+              )}
 
               {isAuthenticated && isFarmer && (
                 <>
+                  <div className="border-t border-gray-100 pt-3 mt-1">
+                    <p className="text-xs font-bold text-[var(--earth-brown)] uppercase tracking-wider mb-2 px-2">Farmer Menu</p>
+                    <button onClick={() => handleFarmerNav('dashboard')}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-medium text-[var(--earth-brown)] hover:bg-[var(--light-sage)]/30 hover:text-[var(--forest-green)] transition-colors"
+                    >
+                      <span className="text-[var(--forest-green)]"><Grid className="w-4 h-4" /></span>
+                      Dashboard
+                    </button>
+                    <button onClick={() => handleFarmerNav('harvests')}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-medium text-[var(--earth-brown)] hover:bg-[var(--light-sage)]/30 hover:text-[var(--forest-green)] transition-colors"
+                    >
+                      <span className="text-[var(--forest-green)]"><Award className="w-4 h-4" /></span>
+                      Harvests
+                    </button>
+                    <button onClick={() => handleFarmerNav('deliveries')}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-medium text-[var(--earth-brown)] hover:bg-[var(--light-sage)]/30 hover:text-[var(--forest-green)] transition-colors"
+                    >
+                      <span className="text-[var(--forest-green)]"><ClipboardList className="w-4 h-4" /></span>
+                      Deliveries
+                    </button>
+                  </div>
+
                   {/* Language */}
-                  <div className="mt-2 mb-1 px-2">
+                  <div className="mt-2 mb-1 px-2 border-t border-gray-100 pt-3">
                     <p className="text-xs font-bold text-[var(--earth-brown)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
                       <Globe className="w-3.5 h-3.5" /> Language
                     </p>
@@ -240,18 +284,6 @@ export function Navigation() {
                       ))}
                     </div>
                   </div>
-
-                  <div className="border-t border-gray-100 pt-3 mt-1">
-                    <p className="text-xs font-bold text-[var(--earth-brown)] uppercase tracking-wider mb-2 px-2">Farm OS</p>
-                    {FARMER_MENU.map(item => (
-                      <button key={item.id} onClick={() => handleFarmerNav(item.id)}
-                        className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-medium text-[var(--earth-brown)] hover:bg-[var(--light-sage)]/30 hover:text-[var(--forest-green)] transition-colors"
-                      >
-                        <span className="text-[var(--forest-green)]">{item.icon}</span>
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
                 </>
               )}
 
@@ -259,13 +291,7 @@ export function Navigation() {
                 <MobileNavLink to="/profile" onClick={() => setMobileMenuOpen(false)}>My Profile</MobileNavLink>
               )}
 
-              <div className="mt-4">
-                <Link to="/orchard" onClick={() => setMobileMenuOpen(false)}>
-                  <button className="w-full px-6 py-4 bg-gradient-to-r from-[var(--forest-green)] to-[var(--leaf-green)] text-white rounded-full font-medium shadow-lg">
-                    My Orchard
-                  </button>
-                </Link>
-              </div>
+
             </div>
           </motion.div>
         )}

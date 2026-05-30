@@ -858,6 +858,57 @@ export function FarmerDashboard() {
                         </div>
                       </div>
 
+                      {/* Quick Action Cards */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <motion.button
+                          whileHover={{ scale: 1.02, y: -4 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setActivePage('add-tree')}
+                          className="bg-white rounded-3xl p-6 shadow-lg border-2 border-[var(--forest-green)]/20 hover:border-[var(--forest-green)] transition-all text-left group"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="w-12 h-12 rounded-2xl bg-[var(--forest-green)]/10 flex items-center justify-center group-hover:bg-[var(--forest-green)] transition-colors">
+                              <Plus className="w-6 h-6 text-[var(--forest-green)] group-hover:text-white transition-colors" />
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-[var(--forest-green)] transition-colors" />
+                          </div>
+                          <h3 className="text-lg font-bold text-[var(--deep-forest)] mb-1">Register a Tree</h3>
+                          <p className="text-xs text-[var(--earth-brown)]">Add new trees to your farm catalog</p>
+                        </motion.button>
+
+                        <motion.button
+                          whileHover={{ scale: 1.02, y: -4 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setActivePage('trees')}
+                          className="bg-white rounded-3xl p-6 shadow-lg border-2 border-orange-200/50 hover:border-orange-500 transition-all text-left group"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center group-hover:bg-orange-500 transition-colors">
+                              <TreePine className="w-6 h-6 text-orange-500 group-hover:text-white transition-colors" />
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-orange-500 transition-colors" />
+                          </div>
+                          <h3 className="text-lg font-bold text-[var(--deep-forest)] mb-1">My Trees</h3>
+                          <p className="text-xs text-[var(--earth-brown)]">{totalTrees} trees registered</p>
+                        </motion.button>
+
+                        <motion.button
+                          whileHover={{ scale: 1.02, y: -4 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setActivePage('adoptions')}
+                          className="bg-white rounded-3xl p-6 shadow-lg border-2 border-blue-200/50 hover:border-blue-500 transition-all text-left group"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-500 transition-colors">
+                              <Users className="w-6 h-6 text-blue-500 group-hover:text-white transition-colors" />
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-blue-500 transition-colors" />
+                          </div>
+                          <h3 className="text-lg font-bold text-[var(--deep-forest)] mb-1">Adoptions</h3>
+                          <p className="text-xs text-[var(--earth-brown)]">{activeAdoptions} active guardians</p>
+                        </motion.button>
+                      </div>
+
                       {/* Realtime Stats Cards */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="bg-white rounded-3xl p-5 shadow border border-gray-100 flex flex-col justify-between hover:shadow-lg transition-all relative overflow-hidden group">
