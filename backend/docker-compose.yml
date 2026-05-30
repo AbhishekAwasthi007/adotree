@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      target: development
+    container_name: tree_adoption_web
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/workspace
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:1234@host.docker.internal:5432/farmTree
+      - DB_SCHEMA=farmTree
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=supersecretjwtkeyforcinematictreeadoptionplatform2026
+      - RAZORPAY_KEY_ID=rzp_test_mockkeyid123
+      - RAZORPAY_KEY_SECRET=mockkeysecret456
+      - GEMINI_API_KEY=mock_gemini_key_if_not_provided
+      - CLOUDINARY_CLOUD_NAME=dkx9grys6
+      - CLOUDINARY_API_KEY=535455769896777
+      - CLOUDINARY_API_SECRET=lKaPLOQCM1PLUhWFftYOOJ0N_nM
+      - CLOUDINARY_FOLDER=flatmate
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    container_name: tree_adoption_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  celery_worker:
+    build:
+      context: .
+      target: development
+    container_name: tree_adoption_celery_worker
+    command: celery -A app.workers.celery.celery_app worker --loglevel=info
+    volumes:
+      - .:/workspace
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:1234@host.docker.internal:5432/farmTree
+      - DB_SCHEMA=farmTree
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=supersecretjwtkeyforcinematictreeadoptionplatform2026
+      - RAZORPAY_KEY_ID=rzp_test_mockkeyid123
+      - RAZORPAY_KEY_SECRET=mockkeysecret456
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  celery_beat:
+    build:
+      context: .
+      target: development
+    container_name: tree_adoption_celery_beat
+    command: celery -A app.workers.celery.celery_app beat --loglevel=info
+    volumes:
+      - .:/workspace
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:1234@host.docker.internal:5432/farmTree
+      - DB_SCHEMA=farmTree
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=supersecretjwtkeyforcinematictreeadoptionplatform2026
+      - RAZORPAY_KEY_ID=rzp_test_mockkeyid123
+      - RAZORPAY_KEY_SECRET=mockkeysecret456
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  redis_data:
