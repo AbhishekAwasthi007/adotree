@@ -59,7 +59,7 @@ async def verify_and_activate_adoption(
         (Adoption.user_id == current_user.id) & 
         (Adoption.tree_id == tree.id) & 
         (Adoption.subscription_status == "pending")
-    ).order_by(Adoption.adoption_date.desc())
+    ).order_by(Adoption.adoption_date.desc()).limit(1)
     
     result_adoption = await db.execute(query_adoption)
     adoption = result_adoption.scalar_one_or_none()

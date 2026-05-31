@@ -7,6 +7,9 @@ import { TreeCeremony } from './pages/TreeCeremony';
 import { MyOrchard } from './pages/MyOrchard';
 import { SustainabilityPage } from './pages/SustainabilityPage';
 import { Dashboard } from './pages/Dashboard';
+import AdminTransactionsPage from './pages/AdminTransactionsPage';
+import FarmerTransactionsPage from './pages/FarmerTransactionsPage';
+import EarningsInsightsPage from './pages/EarningsInsightsPage';
 import { AuthProvider } from './context/AuthContext';
 import { AuthModal } from './components/AuthModal';
 import { ProfilePage } from './pages/ProfilePage';
@@ -34,6 +37,9 @@ export default function App() {
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/sustainability" element={<SustainabilityPage />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/admin/transactions" element={<AdminTransactionsPage />} />
+            <Route path="/farmer/transactions" element={<FarmerTransactionsPage />} />
+            <Route path="/farmer/earnings" element={<EarningsInsightsPage />} />
           </Routes>
         </div>
       </Router>

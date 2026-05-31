@@ -85,6 +85,7 @@ export function Navigation() {
             {!(isAuthenticated && (isFarmer || isAdmin)) && (
               <>
                 <NavLink to="/explore">Explore Trees</NavLink>
+                <NavLink to="/orchard">My Orchard</NavLink>
                 <NavLink to="/sustainability">Sustainability</NavLink>
               </>
             )}
@@ -225,6 +226,7 @@ export function Navigation() {
               {!(isAuthenticated && (isFarmer || isAdmin)) && (
                 <>
                   <MobileNavLink to="/explore" onClick={() => setMobileMenuOpen(false)}>Explore Trees</MobileNavLink>
+                  <MobileNavLink to="/orchard" onClick={() => setMobileMenuOpen(false)}>My Orchard</MobileNavLink>
                   <MobileNavLink to="/sustainability" onClick={() => setMobileMenuOpen(false)}>Sustainability</MobileNavLink>
                 </>
               )}

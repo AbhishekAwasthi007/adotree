@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { useLocation } from 'react-router-dom';
 import { api } from '../services/api';
 import { toast } from 'sonner';
+import BankAccountModal from '../components/BankAccountModal';
+import WithdrawalRequestModal from '../components/WithdrawalRequestModal';
 import {
   TrendingUp, Users, CheckCircle, XCircle, Plus,
   BookOpen, Award, DollarSign, AlertCircle, Activity, TreePine,
@@ -95,6 +97,8 @@ export function FarmerDashboard() {
 
   // Wallet State
   const [walletBalance, setWalletBalance] = useState(54890);
+  const [showBankModal, setShowBankModal] = useState(false);
+  const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
   const [payoutHistory, setPayoutHistory] = useState([
     { id: 'pay_1', amount: 14997, status: 'Completed', date: 'May 20, 2026', method: 'HDFC Bank - 4302' },
     { id: 'pay_2', amount: 8990, status: 'Completed', date: 'May 10, 2026', method: 'HDFC Bank - 4302' },
@@ -2031,14 +2035,7 @@ export function FarmerDashboard() {
                             <p className="text-[10px] text-gray-400 mt-2">Cleared payouts from active monthly subscriptions</p>
                           </div>
                           <button
-                            onClick={() => {
-                              if (walletBalance === 0) {
-                                toast.error('Balance is zero.');
-                                return;
-                              }
-                              setWalletBalance(0);
-                              toast.success('Payout request submitted to bank registry!');
-                            }}
+                            onClick={() => setShowWithdrawalModal(true)}
                             className="w-full py-3 bg-gradient-to-r from-[var(--forest-green)] to-[var(--leaf-green)] text-white text-xs font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
                           >
                             Submit Withdrawal Payout
@@ -2047,9 +2044,17 @@ export function FarmerDashboard() {
 
                         {/* Payout Bank info */}
                         <div className="md:col-span-2 bg-white rounded-3xl p-6 shadow border border-gray-100 space-y-4">
-                          <h3 className="font-bold text-sm text-[var(--deep-forest)] flex items-center gap-2">
-                            <CreditCard className="w-4 h-4 text-[var(--forest-green)]" /> Bank Settings & Payout Target
-                          </h3>
+                          <div className="flex justify-between items-center">
+                            <h3 className="font-bold text-sm text-[var(--deep-forest)] flex items-center gap-2">
+                              <CreditCard className="w-4 h-4 text-[var(--forest-green)]" /> Bank Settings & Payout Target
+                            </h3>
+                            <button
+                              onClick={() => setShowBankModal(true)}
+                              className="px-4 py-2 bg-green-100 text-green-700 text-xs font-bold rounded-lg hover:bg-green-200 transition-colors"
+                            >
+                              Edit
+                            </button>
+                          </div>
                           <div className="grid sm:grid-cols-2 gap-4 text-xs">
                             <div className="p-4 bg-gray-50 rounded-2xl border">
                               <span className="text-[10px] text-gray-400 font-bold block">Institution Bank Name</span>
@@ -2345,6 +2350,20 @@ export function FarmerDashboard() {
 
         </div>
       )}
+
+      {/* Bank Account Modal */}
+      <BankAccountModal
+        isOpen={showBankModal}
+        onClose={() => setShowBankModal(false)}
+        onSave={() => toast.success('Bank details updated successfully!')}
+      />
+
+      {/* Withdrawal Request Modal */}
+      <WithdrawalRequestModal
+        isOpen={showWithdrawalModal}
+        onClose={() => setShowWithdrawalModal(false)}
+        availableBalance={walletBalance}
+      />
 
     </div>
   );

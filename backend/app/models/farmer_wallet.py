@@ -33,8 +33,18 @@ class FarmerWallet(Base):
 
     # Relationships
     farmer: Mapped["Farmer"] = relationship("Farmer", uselist=False)
-    transactions: Mapped[List["Transaction"]] = relationship(
-        "Transaction",
-        primaryjoin="and_(FarmerWallet.farmer_id == foreign(Farmer.id), Farmer.user_id == foreign(Transaction.to_user_id))",
-        viewonly=True
-    )
+    # TODO: Fix this relationship - currently causes SQLAlchemy configuration error
+    # The relationship tries to join FarmerWallet -> Farmer -> Transaction which is complex
+    # Commenting out for now; can be re-implemented as a query method if needed
+    # transactions: Mapped[List["Transaction"]] = relationship(
+    #     "Transaction",
+    #     uselist=True,
+    #     viewonly=True,
+    #     lazy="select",
+    #     sync_backref=False,
+    #     foreign_keys="[FarmerWallet.farmer_id]",
+    #     primaryjoin="and_("
+    #         "foreign(FarmerWallet.farmer_id) == Farmer.id, "
+    #         "Farmer.user_id == foreign(Transaction.to_user_id)"
+    #     ")"
+    # )
