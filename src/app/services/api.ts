@@ -111,7 +111,7 @@ export const api = {
       clearTokens();
     },
     getMe: () => fetchAPI('/users/me'),
-    updateMe: (payload: { name?: string; profile_image?: string }) =>
+    updateMe: (payload: { name?: string; profile_image?: string; eco_points?: number; streak_count?: number }) =>
       fetchAPI('/users/me', {
         method: 'PUT',
         body: JSON.stringify(payload),
@@ -167,6 +167,7 @@ export const api = {
         body: JSON.stringify(payload),
       }),
     getMyOrchard: () => fetchAPI('/adoptions/my-orchard'),
+    get: (id: string) => fetchAPI(`/adoptions/${id}`),
   },
 
   // Live Stream & Ceremonies

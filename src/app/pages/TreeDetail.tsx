@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, MapPin, Calendar, Droplets, Sun, Wind, Heart, Share2,
-  Camera, TrendingUp, Gift, Leaf, User, Award, X, Sparkles, CheckCircle, Loader2,
+  TrendingUp, Gift, Leaf, User, Award, X, Sparkles, CheckCircle, Loader2,
   Home, Phone, ChevronRight, ChevronLeft,
 } from 'lucide-react';
 import { FloatingParticles } from '../components/FloatingParticles';
@@ -26,6 +26,7 @@ const staticTreeData = {
   health: 95,
   organic: true,
   adopted: 12,
+  status: 'available',
   description:
     'This beautiful Alphonso mango tree is planted in the fertile soils of Ratnagiri. Known for producing the sweetest mangoes in India, this tree will provide you with premium organic fruits every season.',
   nextHarvest: 'August 2026',
@@ -86,7 +87,6 @@ export function TreeDetail() {
   const [selectedAddressIdx, setSelectedAddressIdx] = useState<number | null>(null);
   const [addingNewAddress, setAddingNewAddress] = useState(false);
 
-  // Load saved addresses from localStorage when modal opens
   const openModal = () => {
     if (!isAuthenticated) { setShowAuthModal(true); return; }
     setCustomTreeName(`My ${tree.type}`);
@@ -149,6 +149,7 @@ export function TreeDetail() {
         health: Math.round(tree.health_score * 10),
         organic: tree.farm?.farmer?.organic_certified ?? true,
         adopted: 12,
+        status: tree.status || 'available',
         description: tree.farm?.farmer?.farm_description || 'This beautiful fruit tree is planted in fertile organic soils. Known for producing high-grade premium crops, this tree will provide you with organic harvest deliveries every season.',
         nextHarvest: 'August 2026',
         plantedDate: 'January 2023',
@@ -179,7 +180,6 @@ export function TreeDetail() {
   }
 
   const tree = mapTreeDetail(backendTree) || staticTreeData;
-
   const handleAdopt = () => openModal();
 
   const handleConfirmPayment = async () => {
@@ -213,218 +213,161 @@ export function TreeDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[var(--cream-white)] to-[var(--light-sage)] pt-24 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-[#FAF9F6] to-[#E8F5E9]/50 text-[#1B4332] pt-24 pb-20">
       <FloatingParticles />
-
-      <div className="max-w-7xl mx-auto px-6">
-        {/* Back Button */}
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mb-6">
-          <Link to="/explore">
-            <button className="flex items-center gap-2 text-[var(--forest-green)] hover:gap-3 transition-all">
-              <ArrowLeft className="w-5 h-5" />
-              Back to Explore
-            </button>
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
+        
+        {/* Navigation */}
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mb-8">
+          <Link to="/explore" className="inline-flex items-center gap-2 text-[#52796F] hover:text-[#1B4332] transition-colors font-bold text-sm">
+            <ArrowLeft className="w-5 h-5" /> Back to Explore
           </Link>
         </motion.div>
 
-        <div className="grid lg:grid-cols-2 gap-12">
-          {/* Left: Image & Media */}
-          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }}>
-            <div className="sticky top-24">
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl mb-6 group">
-                <img src={tree.image} alt={tree.name} className="w-full aspect-[4/3] object-cover" />
-
-                {/* Overlay Badges */}
-                <div className="absolute top-6 left-6 flex flex-col gap-3">
-                  {tree.organic && (
-                    <div className="px-4 py-2 bg-[var(--leaf-green)]/90 backdrop-blur-sm text-white rounded-full flex items-center gap-2">
-                      <Leaf className="w-4 h-4" />
-                      Certified Organic
-                    </div>
-                  )}
-  
+        {/* BENTO BOX GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* HERO SECTION (Spans 8 cols) */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }} 
+            animate={{ opacity: 1, scale: 1 }} 
+            className="lg:col-span-8 bg-white rounded-[2.5rem] overflow-hidden shadow-2xl border border-[#1B4332]/10 relative group min-h-[450px] flex flex-col justify-end"
+          >
+            <img src={tree.image} alt={tree.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-[2s] ease-out" />
+            <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+            
+            {/* Top Badges */}
+            <div className="absolute top-6 left-6 z-20 flex gap-3">
+              {tree.organic && (
+                <div className="px-4 py-2 bg-[#52B788] text-white backdrop-blur-md rounded-full text-xs font-bold flex items-center gap-2 shadow-lg">
+                  <Leaf className="w-4 h-4" /> Certified Organic
                 </div>
+              )}
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="absolute top-6 right-6 z-20 flex gap-3">
+              <button onClick={() => setLiked(!liked)} className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors">
+                <Heart className={`w-5 h-5 ${liked ? 'fill-red-500 text-red-500' : ''}`} />
+              </button>
+              <button className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors">
+                <Share2 className="w-5 h-5" />
+              </button>
+            </div>
 
-                {/* Hover Actions */}
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => setLiked(!liked)}
-                    className="p-4 bg-white rounded-full"
-                  >
-                    <Heart
-                      className={`w-6 h-6 ${liked ? 'fill-red-500 text-red-500' : 'text-gray-700'}`}
-                    />
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-4 bg-white rounded-full"
-                  >
-                    <Share2 className="w-6 h-6 text-gray-700" />
-                  </motion.button>
-                </div>
+            {/* Bottom Hero Info */}
+            <div className="relative z-20 p-8 text-white">
+              <h1 className="text-4xl md:text-5xl font-black mb-4 tracking-tight drop-shadow-lg">{tree.name}</h1>
+              <div className="flex flex-wrap items-center gap-5 text-sm md:text-base text-white/90 font-medium">
+                <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-[#52B788]"/> {tree.location}</div>
+                <div className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-[#F4A261]"/> Planted {tree.plantedDate}</div>
               </div>
-
-              {/* Weather Widget */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-xl"
-              >
-                <h3 className="font-bold text-[var(--deep-forest)] mb-4 flex items-center gap-2">
-                  <Sun className="w-5 h-5 text-[var(--golden-sun)]" />
-                  Live Weather Conditions
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3">
-                    <Sun className="w-8 h-8 text-[var(--golden-sun)]" />
-                    <div>
-                      <div className="text-xs text-[var(--earth-brown)]">Temperature</div>
-                      <div className="font-bold text-[var(--deep-forest)]">{tree.weather.temp}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Droplets className="w-8 h-8 text-[var(--sky-blue)]" />
-                    <div>
-                      <div className="text-xs text-[var(--earth-brown)]">Humidity</div>
-                      <div className="font-bold text-[var(--deep-forest)]">{tree.weather.humidity}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Wind className="w-8 h-8 text-gray-400" />
-                    <div>
-                      <div className="text-xs text-[var(--earth-brown)]">Rainfall</div>
-                      <div className="font-bold text-[var(--deep-forest)]">{tree.weather.rainfall}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Sun className="w-8 h-8 text-[var(--sunset-orange)]" />
-                    <div>
-                      <div className="text-xs text-[var(--earth-brown)]">Sunlight</div>
-                      <div className="font-bold text-[var(--deep-forest)]">{tree.weather.sunlight}</div>
-                    </div>
-                  </div>
-                </div>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="mt-4 p-4 bg-[var(--light-sage)] rounded-2xl"
-                >
-                  <p className="text-sm text-[var(--forest-green)]">
-                    ☀️ Perfect conditions! Your tree is thriving today.
-                  </p>
-                </motion.div>
-              </motion.div>
             </div>
           </motion.div>
 
-          {/* Right: Details */}
-          <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}>
-            <div className="mb-6">
-              <h1 className="text-5xl font-bold text-[var(--deep-forest)] mb-4">{tree.name}</h1>
-              <div className="flex items-center gap-6 text-[var(--earth-brown)] mb-6">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  {tree.location}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  Planted {tree.plantedDate}
-                </div>
+          {/* PRICING & CTA (Spans 4 cols) */}
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }} 
+            animate={{ opacity: 1, x: 0 }} 
+            className="lg:col-span-4 bg-white rounded-[2.5rem] p-8 shadow-xl border border-[#1B4332]/10 flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-bold text-[#081C15]">Adoption Plan</h3>
+                <span className="px-3 py-1 bg-[#1B4332]/10 text-[#1B4332] font-black text-[10px] rounded-full uppercase tracking-wider">Premium</span>
+              </div>
+              
+              <div className="mb-8">
+                <div className="text-5xl font-black text-[#1B4332] mb-3">{tree.price} <span className="text-lg text-[#52796F] font-medium">/ year</span></div>
+                <p className="text-sm text-[#52796F] leading-relaxed font-medium">{tree.description}</p>
               </div>
 
-              {/* Health Bar */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-[var(--deep-forest)]">Tree Health</span>
-                  <span className="text-2xl font-bold text-[var(--forest-green)]">{tree.health}%</span>
+              <div className="space-y-5 mb-8">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#52796F] flex items-center gap-2 font-bold"><Gift className="w-5 h-5 text-[#52B788]"/> Expected Yield</span>
+                  <span className="font-bold text-[#081C15] text-base">{tree.yield}</span>
                 </div>
-                <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${tree.health}%` }}
-                    transition={{ duration: 1, delay: 0.5 }}
-                    className="h-full bg-gradient-to-r from-[var(--leaf-green)] to-[var(--forest-green)] rounded-full"
-                  />
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#52796F] flex items-center gap-2 font-bold"><Calendar className="w-5 h-5 text-[#1B4332]"/> Next Harvest</span>
+                  <span className="font-bold text-[#081C15] text-base">{tree.nextHarvest}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#52796F] flex items-center gap-2 font-bold"><Award className="w-5 h-5 text-[#FFB703]"/> Total Adopted</span>
+                  <span className="font-bold text-[#081C15] text-base">{tree.adopted} times</span>
                 </div>
               </div>
-
-              <p className="text-lg text-[var(--earth-brown)] leading-relaxed mb-8">
-                {tree.description}
-              </p>
-
-              {/* Key Info Grid */}
-              <div className="grid grid-cols-2 gap-6 mb-8">
-                <InfoCard label="Expected Yield" value={tree.yield} icon={<Gift />} />
-                <InfoCard label="Next Harvest" value={tree.nextHarvest} icon={<Calendar />} />
-                <InfoCard label="Adopted" value={`${tree.adopted} times`} icon={<Award />} />
-                <InfoCard label="GPS Location" value={tree.gpsCoords} icon={<MapPin />} />
-              </div>
-
-              {/* Farmer Card */}
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-xl mb-8"
-              >
-                <h3 className="font-bold text-[var(--deep-forest)] mb-4 flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Meet Your Farmer
-                </h3>
-                <div className="flex items-center gap-4">
-                  <img
-                    src={tree.farmer.avatar}
-                    alt={tree.farmer.name}
-                    className="w-16 h-16 rounded-full object-cover"
-                  />
-                  <div>
-                    <div className="font-bold text-[var(--deep-forest)]">{tree.farmer.name}</div>
-                    <div className="text-sm text-[var(--earth-brown)]">
-                      {tree.farmer.experience} of farming experience
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* CTA */}
-              <motion.button
-                onClick={handleAdopt}
-                whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(27, 67, 50, 0.3)' }}
-                whileTap={{ scale: 0.95 }}
-                className="w-full px-12 py-6 bg-gradient-to-r from-[var(--forest-green)] to-[var(--leaf-green)] text-white text-xl font-medium rounded-full shadow-2xl mb-4"
-              >
-                Adopt This Tree — {tree.price}
-              </motion.button>
-              <p className="text-center text-sm text-[var(--earth-brown)]">
-                100% Organic • Real Harvest Delivery
-              </p>
             </div>
 
-            {/* Growth Timeline */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-xl"
+            <button 
+              onClick={handleAdopt}
+              disabled={tree.status !== 'available'}
+              className={`w-full py-5 font-black rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 text-lg ${
+                tree.status === 'available'
+                  ? 'bg-[#1B4332] hover:bg-[#081C15] text-white hover:shadow-[#1B4332]/25 hover:-translate-y-1'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+              }`}
             >
-              <h3 className="font-bold text-[var(--deep-forest)] mb-6 flex items-center gap-2 text-2xl">
-                <TrendingUp className="w-6 h-6" />
-                Growth Timeline
+              {tree.status === 'available' ? (
+                <>
+                  <Sparkles className="w-5 h-5"/> Adopt This Tree
+                </>
+              ) : (
+                <>
+                  <X className="w-5 h-5"/> {tree.status === 'adopted' ? 'Already Adopted' : 'Tree Unavailable'}
+                </>
+              )}
+            </button>
+          </motion.div>
+
+          {/* WEATHER WIDGET (Spans 6 cols) */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-6 bg-white rounded-[2.5rem] p-8 shadow-xl border border-[#1B4332]/10">
+            <h3 className="font-bold text-[#081C15] mb-6 flex items-center gap-3 text-2xl">
+              <Sun className="w-7 h-7 text-[#FFB703]" /> Live Conditions
+            </h3>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <WeatherItem icon={<Sun className="w-10 h-10 text-[#FFB703]"/>} label="Temperature" value={tree.weather.temp} />
+              <WeatherItem icon={<Droplets className="w-10 h-10 text-[#90E0EF]"/>} label="Humidity" value={tree.weather.humidity} />
+              <WeatherItem icon={<Wind className="w-10 h-10 text-[#52796F]"/>} label="Rainfall" value={tree.weather.rainfall} />
+              <WeatherItem icon={<Sun className="w-10 h-10 text-[#FFB703]"/>} label="Sunlight" value={tree.weather.sunlight} />
+            </div>
+            <div className="p-5 bg-[#FAF9F6] rounded-2xl border border-[#1B4332]/10">
+              <div className="flex justify-between items-center mb-3">
+                <span className="font-bold text-[#081C15]">Overall Tree Health</span>
+                <span className="font-black text-[#52B788] text-lg">{tree.health}%</span>
+              </div>
+              <div className="h-3 bg-[#D8F3DC] rounded-full overflow-hidden">
+                <div className="h-full bg-[#52B788] rounded-full" style={{ width: `${tree.health}%` }} />
+              </div>
+            </div>
+          </motion.div>
+
+          {/* TIMELINE & FARMER (Spans 6 cols) */}
+          <div className="lg:col-span-6 grid grid-cols-1 gap-6">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-[#1B4332]/10 flex items-center gap-6">
+              <img src={tree.farmer.avatar} alt={tree.farmer.name} className="w-24 h-24 rounded-2xl object-cover shadow-md" />
+              <div>
+                <h3 className="text-xs text-[#52796F] uppercase tracking-wider font-black mb-1">Your Farmer</h3>
+                <div className="text-2xl font-bold text-[#081C15] mb-1">{tree.farmer.name}</div>
+                <div className="text-sm text-[#1B4332] font-bold flex items-center gap-1.5"><Award className="w-4 h-4"/> {tree.farmer.experience} Experience</div>
+              </div>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-[#1B4332]/10 h-full">
+              <h3 className="font-bold text-[#081C15] mb-8 flex items-center gap-3 text-2xl">
+                <TrendingUp className="w-7 h-7 text-[#1B4332]" /> Growth Timeline
               </h3>
               <div className="space-y-6">
-                {tree.timeline.map((event, index) => (
-                  <TimelineCard key={index} event={event} index={index} />
+                {tree.timeline.map((event: any, index: number) => (
+                  <TimelineCard key={index} event={event} index={index} isLast={index === tree.timeline.length - 1} />
                 ))}
               </div>
             </motion.div>
-          </motion.div>
+          </div>
+
         </div>
       </div>
 
-      {/* Payment Modal */}
+      {/* Payment Modal Refactored */}
       <AnimatePresence>
         {showPaymentModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -432,20 +375,20 @@ export function TreeDetail() {
               onClick={() => !isAdopting && setShowPaymentModal(false)}
               className="absolute inset-0 bg-black/60 backdrop-blur-md"
             />
-            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl z-10 overflow-hidden"
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl z-10 overflow-hidden border border-[#1B4332]/15"
             >
               {!adoptionDone ? (
                 <>
                   {/* Step progress bar */}
-                  <div className="flex border-b border-gray-100">
+                  <div className="flex border-b border-[#1B4332]/10 bg-[#FAF9F6]">
                     {(['details', 'address', 'payment'] as const).map((s, i) => (
-                      <div key={s} className={`flex-1 py-3 text-center text-[10px] font-black uppercase tracking-wider transition-all ${
+                      <div key={s} className={`flex-1 py-4 text-center text-[10px] font-black uppercase tracking-wider transition-all ${
                         modalStep === s
-                          ? 'bg-[var(--forest-green)] text-white'
+                          ? 'bg-[#1B4332] text-white'
                           : i < ['details','address','payment'].indexOf(modalStep)
-                            ? 'bg-[var(--light-sage)] text-[var(--forest-green)]'
-                            : 'text-gray-300'
+                            ? 'bg-[#52B788]/20 text-[#1B4332]'
+                            : 'text-[#52796F]'
                       }`}>
                         {i + 1}. {s === 'details' ? 'Tree Details' : s === 'address' ? 'Delivery Address' : 'Confirm & Pay'}
                       </div>
@@ -453,40 +396,40 @@ export function TreeDetail() {
                   </div>
 
                   <div className="p-8">
-                    <button onClick={() => !isAdopting && setShowPaymentModal(false)} className="absolute top-14 right-5 p-2 rounded-full hover:bg-gray-100">
-                      <X className="w-5 h-5 text-gray-400" />
+                    <button onClick={() => !isAdopting && setShowPaymentModal(false)} className="absolute top-14 right-5 p-2 rounded-full hover:bg-[#FAF9F6] text-[#52796F] transition-colors">
+                      <X className="w-5 h-5" />
                     </button>
 
                     {/* STEP 1: Tree details */}
                     {modalStep === 'details' && (
                       <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                        <div className="flex items-center gap-3 mb-6">
-                          <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0">
+                        <div className="flex items-center gap-4 mb-8">
+                          <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 border border-[#1B4332]/10">
                             <img src={tree.image} alt={tree.name} className="w-full h-full object-cover" />
                           </div>
                           <div>
-                            <h3 className="text-lg font-bold text-[var(--deep-forest)]">{tree.name}</h3>
-                            <p className="text-[var(--forest-green)] font-bold">{tree.price} / year</p>
+                            <h3 className="text-lg font-bold text-[#081C15]">{tree.name}</h3>
+                            <p className="text-[#1B4332] font-bold">{tree.price} / year</p>
                           </div>
                         </div>
 
-                        <div className="space-y-4">
+                        <div className="space-y-5">
                           <div>
-                            <label className="block text-xs font-bold text-[var(--deep-forest)] mb-1.5">Name Your Tree</label>
+                            <label className="block text-xs font-bold text-[#081C15] mb-2">Name Your Tree</label>
                             <input
                               type="text"
                               value={customTreeName}
                               onChange={e => setCustomTreeName(e.target.value)}
                               placeholder={`e.g. Grandpa's Mango`}
-                              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none focus:border-[var(--forest-green)] text-sm"
+                              className="w-full px-4 py-3 bg-[#FAF9F6] border-2 border-[#D8F3DC] rounded-xl outline-none focus:border-[#1B4332] text-[#081C15] text-sm transition-colors placeholder:text-[#52796F]/50"
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-bold text-[var(--deep-forest)] mb-1.5">Occasion</label>
+                            <label className="block text-xs font-bold text-[#081C15] mb-2">Occasion</label>
                             <select
                               value={occasionType}
                               onChange={e => setOccasionType(e.target.value)}
-                              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none focus:border-[var(--forest-green)] bg-white text-sm"
+                              className="w-full px-4 py-3 bg-[#FAF9F6] border-2 border-[#D8F3DC] rounded-xl outline-none focus:border-[#1B4332] text-[#081C15] text-sm transition-colors"
                             >
                               <option value="personal">Personal Gift to Myself</option>
                               <option value="birthday">Birthday Gift</option>
@@ -496,13 +439,13 @@ export function TreeDetail() {
                             </select>
                           </div>
                           <div>
-                            <label className="block text-xs font-bold text-[var(--deep-forest)] mb-1.5">Dedication Message (optional)</label>
+                            <label className="block text-xs font-bold text-[#081C15] mb-2">Dedication Message (optional)</label>
                             <textarea
                               value={dedicationMessage}
                               onChange={e => setDedicationMessage(e.target.value)}
                               placeholder="e.g. In memory of grandpa who loved mangoes..."
                               rows={2}
-                              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none focus:border-[var(--forest-green)] text-sm resize-none"
+                              className="w-full px-4 py-3 bg-[#FAF9F6] border-2 border-[#D8F3DC] rounded-xl outline-none focus:border-[#1B4332] text-[#081C15] text-sm resize-none transition-colors placeholder:text-[#52796F]/50"
                             />
                           </div>
                         </div>
@@ -510,9 +453,9 @@ export function TreeDetail() {
                         <button
                           onClick={() => setModalStep('address')}
                           disabled={!customTreeName.trim()}
-                          className="mt-6 w-full py-4 bg-gradient-to-r from-[var(--forest-green)] to-[var(--leaf-green)] text-white font-bold rounded-2xl shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                          className="mt-8 w-full py-4 bg-[#1B4332] hover:bg-[#081C15] text-white font-bold rounded-2xl shadow-lg hover:shadow-[#1B4332]/25 flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
                         >
-                          Next: Delivery Address <ChevronRight className="w-4 h-4" />
+                          Next: Delivery Address <ChevronRight className="w-5 h-5" />
                         </button>
                       </motion.div>
                     )}
@@ -520,47 +463,47 @@ export function TreeDetail() {
                     {/* STEP 2: Delivery address */}
                     {modalStep === 'address' && (
                       <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                        <div className="flex items-center gap-2 mb-5">
-                          <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center">
-                            <MapPin className="w-5 h-5 text-amber-600" />
+                        <div className="flex items-center gap-3 mb-6">
+                          <div className="w-10 h-10 rounded-full bg-[#D8F3DC] flex items-center justify-center">
+                            <MapPin className="w-5 h-5 text-[#1B4332]" />
                           </div>
                           <div>
-                            <h3 className="font-bold text-[var(--deep-forest)] text-sm">Harvest Delivery Address</h3>
-                            <p className="text-[10px] text-[var(--earth-brown)]">Where should your seasonal harvest be shipped? 🍊</p>
+                            <h3 className="font-bold text-[#081C15] text-sm">Harvest Delivery Address</h3>
+                            <p className="text-[10px] text-[#52796F] font-medium">Where should your seasonal harvest be shipped? 🍊</p>
                           </div>
                         </div>
 
                         {/* Saved addresses */}
                         {savedAddresses.length > 0 && !addingNewAddress && (
-                          <div className="space-y-2 mb-4">
+                          <div className="space-y-3 mb-6">
                             {savedAddresses.map((addr, idx) => (
                               <button
                                 key={idx}
                                 onClick={() => { setSelectedAddressIdx(idx); setDeliveryAddress(addr); }}
-                                className={`w-full text-left p-3 rounded-2xl border-2 transition-all ${
+                                className={`w-full text-left p-4 rounded-2xl border-2 transition-all ${
                                   selectedAddressIdx === idx
-                                    ? 'border-[var(--forest-green)] bg-[var(--light-sage)]/30'
-                                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                                    ? 'border-[#1B4332] bg-[#FAF9F6] shadow-md'
+                                    : 'border-[#1B4332]/10 hover:border-[#1B4332]/30 bg-white'
                                 }`}
                               >
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex items-start gap-3 flex-1 min-w-0">
                                     <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-                                      selectedAddressIdx === idx ? 'border-[var(--forest-green)]' : 'border-gray-300'
+                                      selectedAddressIdx === idx ? 'border-[#1B4332]' : 'border-[#52796F]'
                                     }`}>
                                       {selectedAddressIdx === idx && (
-                                        <div className="w-2 h-2 rounded-full bg-[var(--forest-green)]" />
+                                        <div className="w-2 h-2 rounded-full bg-[#1B4332]" />
                                       )}
                                     </div>
                                     <div className="min-w-0">
-                                      <p className="text-xs font-bold text-[var(--deep-forest)] truncate">{addr.fullName} · {addr.phone}</p>
-                                      <p className="text-[10px] text-[var(--earth-brown)] leading-relaxed mt-0.5">
+                                      <p className="text-xs font-bold text-[#081C15] truncate">{addr.fullName} · {addr.phone}</p>
+                                      <p className="text-[10px] text-[#52796F] leading-relaxed mt-1">
                                         {addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}, {addr.city}, {addr.state} — {addr.pincode}
                                       </p>
                                     </div>
                                   </div>
                                   {selectedAddressIdx === idx && (
-                                    <span className="text-[9px] font-black text-[var(--forest-green)] bg-[var(--light-sage)] px-2 py-0.5 rounded-full flex-shrink-0">Selected</span>
+                                    <span className="text-[9px] font-black text-[#1B4332] bg-[#D8F3DC] px-2.5 py-1 rounded-full flex-shrink-0 uppercase tracking-wider">Selected</span>
                                   )}
                                 </div>
                               </button>
@@ -572,20 +515,20 @@ export function TreeDetail() {
                                 setSelectedAddressIdx(null);
                                 setDeliveryAddress({ fullName: '', phone: '', line1: '', line2: '', city: '', state: '', pincode: '' });
                               }}
-                              className="w-full py-2.5 border-2 border-dashed border-gray-300 hover:border-[var(--forest-green)] rounded-2xl text-xs font-bold text-[var(--earth-brown)] hover:text-[var(--forest-green)] transition-all flex items-center justify-center gap-1.5"
+                              className="w-full py-4 border-2 border-dashed border-[#1B4332]/20 hover:border-[#1B4332] rounded-2xl text-xs font-bold text-[#52796F] hover:text-[#1B4332] transition-all flex items-center justify-center gap-2 bg-[#FAF9F6]"
                             >
-                              <Home className="w-3.5 h-3.5" /> + Add New Address
+                              <Home className="w-4 h-4" /> Add New Address
                             </button>
                           </div>
                         )}
 
                         {/* New address form */}
                         {addingNewAddress && (
-                          <div className="space-y-3 mb-4">
+                          <div className="space-y-4 mb-6">
                             {savedAddresses.length > 0 && (
                               <button
                                 onClick={() => { setAddingNewAddress(false); setSelectedAddressIdx(0); setDeliveryAddress(savedAddresses[0]); }}
-                                className="flex items-center gap-1 text-[10px] font-bold text-[var(--forest-green)] hover:underline mb-1"
+                                className="flex items-center gap-1 text-[10px] font-bold text-[#1B4332] hover:underline mb-2"
                               >
                                 <ChevronLeft className="w-3 h-3" /> Use saved address
                               </button>
@@ -593,83 +536,83 @@ export function TreeDetail() {
 
                             <div className="grid grid-cols-2 gap-3">
                               <div>
-                                <label className="block text-[10px] font-bold text-[var(--deep-forest)] mb-1 flex items-center gap-1">
+                                <label className="block text-[10px] font-bold text-[#081C15] mb-1.5 flex items-center gap-1">
                                   <User className="w-3 h-3" /> Full Name *
                                 </label>
                                 <input type="text" value={deliveryAddress.fullName}
                                   onChange={e => setDeliveryAddress(p => ({ ...p, fullName: e.target.value }))}
                                   placeholder="Rohan Sharma"
-                                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl outline-none focus:border-[var(--forest-green)] text-xs"
+                                  className="w-full px-3 py-2.5 bg-[#FAF9F6] border-2 border-[#D8F3DC] rounded-xl outline-none focus:border-[#1B4332] text-[#081C15] text-xs transition-colors placeholder:text-[#52796F]/50"
                                 />
                               </div>
                               <div>
-                                <label className="block text-[10px] font-bold text-[var(--deep-forest)] mb-1 flex items-center gap-1">
+                                <label className="block text-[10px] font-bold text-[#081C15] mb-1.5 flex items-center gap-1">
                                   <Phone className="w-3 h-3" /> Phone *
                                 </label>
                                 <input type="tel" value={deliveryAddress.phone}
                                   onChange={e => setDeliveryAddress(p => ({ ...p, phone: e.target.value }))}
                                   placeholder="+91 98765 43210"
-                                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl outline-none focus:border-[var(--forest-green)] text-xs"
+                                  className="w-full px-3 py-2.5 bg-[#FAF9F6] border-2 border-[#D8F3DC] rounded-xl outline-none focus:border-[#1B4332] text-[#081C15] text-xs transition-colors placeholder:text-[#52796F]/50"
                                 />
                               </div>
                             </div>
                             <div>
-                              <label className="block text-[10px] font-bold text-[var(--deep-forest)] mb-1 flex items-center gap-1">
-                                <Home className="w-3 h-3" /> Address Line 1 *
+                              <label className="block text-[10px] font-bold text-[#081C15] mb-1.5 flex items-center gap-1">
+                                  <Home className="w-3 h-3" /> Address Line 1 *
                               </label>
                               <input type="text" value={deliveryAddress.line1}
                                 onChange={e => setDeliveryAddress(p => ({ ...p, line1: e.target.value }))}
                                 placeholder="Flat / House No., Building, Street"
-                                className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl outline-none focus:border-[var(--forest-green)] text-xs"
+                                className="w-full px-3 py-2.5 bg-[#FAF9F6] border-2 border-[#D8F3DC] rounded-xl outline-none focus:border-[#1B4332] text-[#081C15] text-xs transition-colors placeholder:text-[#52796F]/50"
                               />
                             </div>
                             <div>
-                              <label className="block text-[10px] font-bold text-[var(--deep-forest)] mb-1">Address Line 2 (optional)</label>
+                              <label className="block text-[10px] font-bold text-[#081C15] mb-1.5">Address Line 2 (optional)</label>
                               <input type="text" value={deliveryAddress.line2}
                                 onChange={e => setDeliveryAddress(p => ({ ...p, line2: e.target.value }))}
                                 placeholder="Landmark, Area, Colony"
-                                className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl outline-none focus:border-[var(--forest-green)] text-xs"
+                                className="w-full px-3 py-2.5 bg-[#FAF9F6] border-2 border-[#D8F3DC] rounded-xl outline-none focus:border-[#1B4332] text-[#081C15] text-xs transition-colors placeholder:text-[#52796F]/50"
                               />
                             </div>
                             <div className="grid grid-cols-3 gap-3">
                               <div>
-                                <label className="block text-[10px] font-bold text-[var(--deep-forest)] mb-1">City *</label>
+                                <label className="block text-[10px] font-bold text-[#081C15] mb-1.5">City *</label>
                                 <input type="text" value={deliveryAddress.city}
                                   onChange={e => setDeliveryAddress(p => ({ ...p, city: e.target.value }))}
                                   placeholder="Mumbai"
-                                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl outline-none focus:border-[var(--forest-green)] text-xs"
+                                  className="w-full px-3 py-2.5 bg-[#FAF9F6] border-2 border-[#D8F3DC] rounded-xl outline-none focus:border-[#1B4332] text-[#081C15] text-xs transition-colors placeholder:text-[#52796F]/50"
                                 />
                               </div>
                               <div>
-                                <label className="block text-[10px] font-bold text-[var(--deep-forest)] mb-1">State *</label>
+                                <label className="block text-[10px] font-bold text-[#081C15] mb-1.5">State *</label>
                                 <input type="text" value={deliveryAddress.state}
                                   onChange={e => setDeliveryAddress(p => ({ ...p, state: e.target.value }))}
                                   placeholder="Maharashtra"
-                                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl outline-none focus:border-[var(--forest-green)] text-xs"
+                                  className="w-full px-3 py-2.5 bg-[#FAF9F6] border-2 border-[#D8F3DC] rounded-xl outline-none focus:border-[#1B4332] text-[#081C15] text-xs transition-colors placeholder:text-[#52796F]/50"
                                 />
                               </div>
                               <div>
-                                <label className="block text-[10px] font-bold text-[var(--deep-forest)] mb-1">Pincode *</label>
+                                <label className="block text-[10px] font-bold text-[#081C15] mb-1.5">Pincode *</label>
                                 <input type="text" value={deliveryAddress.pincode}
                                   onChange={e => setDeliveryAddress(p => ({ ...p, pincode: e.target.value }))}
                                   placeholder="400050" maxLength={6}
-                                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl outline-none focus:border-[var(--forest-green)] text-xs"
+                                  className="w-full px-3 py-2.5 bg-[#FAF9F6] border-2 border-[#D8F3DC] rounded-xl outline-none focus:border-[#1B4332] text-[#081C15] text-xs transition-colors placeholder:text-[#52796F]/50"
                                 />
                               </div>
                             </div>
 
-                            <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-xl p-3">
-                              <MapPin className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
-                              <p className="text-[10px] text-amber-700 leading-relaxed">
+                            <div className="flex items-start gap-2 bg-[#D8F3DC]/30 border border-[#D8F3DC] rounded-xl p-3">
+                              <MapPin className="w-4 h-4 text-[#1B4332] flex-shrink-0 mt-0.5" />
+                              <p className="text-[10px] text-[#1B4332] leading-relaxed font-medium">
                                 Shared only with your assigned farmer for seasonal harvest delivery.
                               </p>
                             </div>
                           </div>
                         )}
 
-                        <div className="flex gap-3 mt-2">
+                        <div className="flex gap-3 mt-4">
                           <button onClick={() => setModalStep('details')}
-                            className="px-5 py-3 border-2 border-gray-200 rounded-2xl font-bold text-xs text-[var(--earth-brown)] hover:bg-gray-50 flex items-center gap-1"
+                            className="px-6 py-4 bg-[#FAF9F6] border-2 border-[#D8F3DC] rounded-2xl font-bold text-xs text-[#52796F] hover:bg-[#FAF9F6]/80 flex items-center gap-1 transition-colors"
                           >
                             <ChevronLeft className="w-4 h-4" /> Back
                           </button>
@@ -677,17 +620,17 @@ export function TreeDetail() {
                             <button
                               onClick={() => { saveNewAddress(); setModalStep('payment'); }}
                               disabled={!deliveryAddress.fullName || !deliveryAddress.phone || !deliveryAddress.line1 || !deliveryAddress.city || !deliveryAddress.state || !deliveryAddress.pincode}
-                              className="flex-1 py-3 bg-gradient-to-r from-[var(--forest-green)] to-[var(--leaf-green)] text-white font-bold rounded-2xl shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 text-xs"
+                              className="flex-1 py-4 bg-[#1B4332] hover:bg-[#081C15] text-white font-bold rounded-2xl shadow-lg hover:shadow-[#1B4332]/25 flex items-center justify-center gap-2 disabled:opacity-50 text-sm transition-all"
                             >
-                              Save & Continue <ChevronRight className="w-4 h-4" />
+                              Save & Continue <ChevronRight className="w-5 h-5" />
                             </button>
                           ) : (
                             <button
                               onClick={() => setModalStep('payment')}
                               disabled={selectedAddressIdx === null}
-                              className="flex-1 py-3 bg-gradient-to-r from-[var(--forest-green)] to-[var(--leaf-green)] text-white font-bold rounded-2xl shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 text-xs"
+                              className="flex-1 py-4 bg-[#1B4332] hover:bg-[#081C15] text-white font-bold rounded-2xl shadow-lg hover:shadow-[#1B4332]/25 flex items-center justify-center gap-2 disabled:opacity-50 text-sm transition-all"
                             >
-                              Use This Address <ChevronRight className="w-4 h-4" />
+                              Use This Address <ChevronRight className="w-5 h-5" />
                             </button>
                           )}
                         </div>
@@ -697,67 +640,67 @@ export function TreeDetail() {
                     {/* STEP 3: Review & Pay */}
                     {modalStep === 'payment' && (
                       <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                        <h3 className="font-bold text-[var(--deep-forest)] mb-4">Review Your Order</h3>
+                        <h3 className="font-bold text-[#081C15] mb-6 text-xl">Review Your Order</h3>
 
                         {/* Tree summary */}
-                        <div className="flex items-center gap-3 mb-4 p-3 bg-[var(--light-sage)]/30 rounded-2xl">
-                          <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0">
+                        <div className="flex items-center gap-4 mb-4 p-4 bg-[#D8F3DC]/30 border border-[#D8F3DC] rounded-2xl">
+                          <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0">
                             <img src={tree.image} alt={tree.name} className="w-full h-full object-cover" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-bold text-sm text-[var(--deep-forest)] truncate">{customTreeName}</p>
-                            <p className="text-[10px] text-[var(--earth-brown)]">{tree.name} · {occasionType}</p>
+                            <p className="font-bold text-sm text-[#081C15] truncate">{customTreeName}</p>
+                            <p className="text-xs text-[#52796F] font-medium mt-0.5">{tree.name} · <span className="capitalize">{occasionType}</span></p>
                           </div>
-                          <p className="font-black text-[var(--forest-green)] text-sm flex-shrink-0">{tree.price}</p>
+                          <p className="font-black text-[#1B4332] text-base flex-shrink-0">{tree.price}</p>
                         </div>
 
                         {/* Delivery address summary */}
-                        <div className="mb-4 p-3 bg-amber-50 border border-amber-100 rounded-2xl">
-                          <div className="flex items-center gap-1.5 mb-2">
-                            <MapPin className="w-3.5 h-3.5 text-amber-600" />
-                            <span className="text-[10px] font-black text-amber-700 uppercase tracking-wider">Deliver Harvest To</span>
+                        <div className="mb-6 p-4 bg-[#FAF9F6] border border-[#1B4332]/10 rounded-2xl">
+                          <div className="flex items-center gap-2 mb-3">
+                            <MapPin className="w-4 h-4 text-[#52B788]" />
+                            <span className="text-[10px] font-black text-[#52B788] uppercase tracking-wider">Deliver Harvest To</span>
                           </div>
-                          <p className="text-xs font-bold text-[var(--deep-forest)]">{deliveryAddress.fullName} · {deliveryAddress.phone}</p>
-                          <p className="text-[10px] text-[var(--earth-brown)] mt-0.5 leading-relaxed">
+                          <p className="text-sm font-bold text-[#081C15]">{deliveryAddress.fullName} · {deliveryAddress.phone}</p>
+                          <p className="text-xs text-[#52796F] mt-1 leading-relaxed font-medium">
                             {deliveryAddress.line1}{deliveryAddress.line2 ? `, ${deliveryAddress.line2}` : ''}, {deliveryAddress.city}, {deliveryAddress.state} — {deliveryAddress.pincode}
                           </p>
                         </div>
 
                         {/* Price breakdown */}
-                        <div className="bg-[var(--light-sage)]/40 rounded-2xl p-4 mb-5 text-xs space-y-1.5 text-[var(--earth-brown)]">
-                          <div className="flex justify-between"><span>Tree Adoption (12 months)</span><span className="font-bold text-[var(--deep-forest)]">{tree.price}</span></div>
-                                <div className="flex justify-between"><span>Harvest Delivery</span><span className="font-bold text-green-600">Included</span></div>
-                          <div className="border-t pt-1.5 flex justify-between font-bold text-sm text-[var(--deep-forest)]"><span>Total</span><span>{tree.price}</span></div>
+                        <div className="bg-[#FAF9F6] rounded-2xl p-5 mb-8 text-sm space-y-3 text-[#52796F] font-medium border border-[#1B4332]/10">
+                          <div className="flex justify-between"><span>Tree Adoption (12 months)</span><span className="font-bold text-[#081C15]">{tree.price}</span></div>
+                          <div className="flex justify-between"><span>Harvest Delivery</span><span className="font-bold text-[#52B788]">Included</span></div>
+                          <div className="border-t border-[#1B4332]/10 pt-3 flex justify-between font-black text-base text-[#081C15]"><span>Total</span><span>{tree.price}</span></div>
                         </div>
 
                         <div className="flex gap-3">
                           <button onClick={() => setModalStep('address')}
-                            className="px-5 py-3 border-2 border-gray-200 rounded-2xl font-bold text-xs text-[var(--earth-brown)] hover:bg-gray-50 flex items-center gap-1"
+                            className="px-6 py-4 bg-[#FAF9F6] border-2 border-[#D8F3DC] rounded-2xl font-bold text-sm text-[#52796F] hover:bg-[#FAF9F6]/80 flex items-center gap-2 transition-colors"
                           >
-                            <ChevronLeft className="w-4 h-4" /> Back
+                            <ChevronLeft className="w-5 h-5" /> Back
                           </button>
                           <motion.button
                             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                             onClick={handleConfirmPayment}
                             disabled={isAdopting}
-                            className="flex-1 py-3 bg-gradient-to-r from-[var(--forest-green)] to-[var(--leaf-green)] text-white font-bold rounded-2xl shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 text-xs"
+                            className="flex-1 py-4 bg-[#1B4332] hover:bg-[#081C15] text-white font-bold rounded-2xl shadow-lg hover:shadow-[#1B4332]/25 flex items-center justify-center gap-2 disabled:opacity-60 text-sm transition-all"
                           >
-                            {isAdopting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4" /> Confirm & Pay {tree.price}</>}
+                            {isAdopting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Sparkles className="w-5 h-5" /> Confirm & Pay {tree.price}</>}
                           </motion.button>
                         </div>
-                        <p className="text-center text-[10px] text-gray-400 mt-3">Secured by Razorpay · 100% Safe</p>
+                        <p className="text-center text-xs text-[#52796F] mt-4 font-medium">Secured by Razorpay · 100% Safe</p>
                       </motion.div>
                     )}
                   </div>
                 </>
               ) : (
-                <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center py-12 px-8 space-y-4">
-                  <CheckCircle className="w-20 h-20 text-[var(--leaf-green)] mx-auto" />
-                  <h3 className="text-2xl font-bold text-[var(--deep-forest)]">Adoption Complete! 🌳</h3>
-                  <p className="text-[var(--earth-brown)] text-sm">Your harvest will be delivered to<br />
-                    <span className="font-bold text-[var(--deep-forest)]">{deliveryAddress.city}, {deliveryAddress.state}</span>
+                <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center py-16 px-8 space-y-5">
+                  <CheckCircle className="w-24 h-24 text-[#52B788] mx-auto" />
+                  <h3 className="text-3xl font-black text-[#081C15]">Adoption Complete! 🌳</h3>
+                  <p className="text-[#52796F] text-base leading-relaxed">Your organic harvest will be delivered directly to<br />
+                    <span className="font-bold text-[#1B4332]">{deliveryAddress.city}, {deliveryAddress.state}</span>
                   </p>
-                  <p className="text-xs text-gray-400">Redirecting to your orchard...</p>
+                  <p className="text-sm text-[#52796F]/60 animate-pulse mt-4">Redirecting to your orchard...</p>
                 </motion.div>
               )}
             </motion.div>
@@ -768,39 +711,32 @@ export function TreeDetail() {
   );
 }
 
-function InfoCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
+function WeatherItem({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
   return (
-    <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 shadow-md">
-      <div className="text-[var(--forest-green)] mb-2">{icon}</div>
-      <div className="text-xs text-[var(--earth-brown)] mb-1">{label}</div>
-      <div className="font-bold text-[var(--deep-forest)]">{value}</div>
+    <div className="flex items-center gap-4 p-4 bg-[#FAF9F6] border border-[#1B4332]/10 hover:bg-[#FAF9F6]/80 transition-colors">
+      <div className="flex-shrink-0">{icon}</div>
+      <div>
+        <div className="text-[10px] uppercase tracking-wider text-[#52796F] font-bold mb-0.5">{label}</div>
+        <div className="font-bold text-[#081C15] text-lg">{value}</div>
+      </div>
     </div>
   );
 }
 
-function TimelineCard({ event, index }: { event: any; index: number }) {
+function TimelineCard({ event, index, isLast }: { event: any; index: number, isLast: boolean }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.1 }}
-      className="flex gap-4 group"
-    >
-      <div className="relative">
-        <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0">
+    <div className="flex gap-5 relative group">
+      <div className="relative z-10 flex flex-col items-center">
+        <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-[#1B4332]/10 shadow-sm flex-shrink-0 group-hover:border-[#1B4332] transition-colors">
           <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
         </div>
-        {index < 2 && (
-          <div className="absolute top-16 left-1/2 -translate-x-1/2 w-0.5 h-8 bg-[var(--forest-green)]/30" />
-        )}
+        {!isLast && <div className="w-0.5 h-full bg-[#1B4332]/10 mt-3 group-hover:bg-[#1B4332]/30 transition-colors" />}
       </div>
-      <div className="flex-1 pb-8">
-        <div className="flex items-start justify-between mb-2">
-          <h4 className="font-bold text-[var(--deep-forest)]">{event.title}</h4>
-          <span className="text-sm text-[var(--earth-brown)]">{event.date}</span>
-        </div>
-        <p className="text-[var(--earth-brown)] text-sm leading-relaxed">{event.description}</p>
+      <div className={`flex-1 ${!isLast ? 'pb-8' : ''}`}>
+        <div className="text-xs text-[#52B788] font-bold uppercase tracking-wider mb-1.5">{event.date}</div>
+        <h4 className="font-bold text-[#081C15] text-lg mb-1.5">{event.title}</h4>
+        <p className="text-sm text-[#1B4332]/80 leading-relaxed font-medium">{event.description}</p>
       </div>
-    </motion.div>
+    </div>
   );
 }

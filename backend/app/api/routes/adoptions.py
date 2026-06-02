@@ -1,3 +1,4 @@
+import uuid
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -83,3 +84,25 @@ async def get_my_orchard(
     result = await db.execute(query)
     adoptions = result.scalars().all()
     return list(adoptions)
+
+@router.get("/{id}", response_model=AdoptionResponse)
+async def get_adoption_detail(
+    id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    query = select(Adoption).options(
+        selectinload(Adoption.tree).selectinload(Tree.farm).selectinload(Farm.farmer)
+    ).where(
+        (Adoption.id == id) &
+        (Adoption.user_id == current_user.id)
+    )
+    result = await db.execute(query)
+    adoption = result.scalar_one_or_none()
+    if not adoption:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Adoption record not found."
+        )
+    return adoption
+
