@@ -11,7 +11,9 @@ from app.models.adoption import Adoption
 from app.models.tree import Tree
 from app.models.user import User
 from app.models.memory import TreeMemory
+from app.models.farm import Farm
 from app.services.payment import RazorpayService
+from app.services.transaction import TransactionService
 from app.workers.tasks import generate_adoption_certificate_task
 from app.services.notification import NotificationService
 
@@ -57,7 +59,7 @@ async def verify_and_activate_adoption(
         (Adoption.user_id == current_user.id) & 
         (Adoption.tree_id == tree.id) & 
         (Adoption.subscription_status == "pending")
-    ).order_by(Adoption.adoption_date.desc())
+    ).order_by(Adoption.adoption_date.desc()).limit(1)
     
     result_adoption = await db.execute(query_adoption)
     adoption = result_adoption.scalar_one_or_none()
@@ -84,12 +86,41 @@ async def verify_and_activate_adoption(
     # 4. Log Payment
     payment = Payment(
         user_id=current_user.id,
+        adoption_id=adoption.id,
         amount=tree.price,
         payment_gateway="Razorpay",
+        order_id=payload.razorpay_order_id,
         transaction_id=payload.razorpay_payment_id,
         status="completed"
     )
     db.add(payment)
+    await db.flush()
+
+    # 4a. Create Transaction Record (Payment holding in admin account)
+    await TransactionService.create_adoption_payment_transaction(
+        db=db,
+        user_id=current_user.id,
+        adoption_id=adoption.id,
+        payment_id=payment.id,
+        amount=tree.price,
+        payment_gateway="Razorpay"
+    )
+
+    # 4b. Get farmer and create commission record
+    query_farm = select(Farm).where(Farm.id == tree.farm_id)
+    result_farm = await db.execute(query_farm)
+    farm = result_farm.scalar_one_or_none()
+    
+    if farm:
+        # Create commission (70% for farmer, 30% commission for platform)
+        commission_percentage = 70  # Farmer gets 70% of adoption price
+        await TransactionService.create_commission_record(
+            db=db,
+            adoption_id=adoption.id,
+            farmer_id=farm.farmer_id,
+            adoption_price=tree.price,
+            commission_percentage=commission_percentage
+        )
 
     # 5. Lock Tree Status
     tree.status = "adopted"

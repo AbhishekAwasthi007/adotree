@@ -7,6 +7,8 @@ from app.models.user import User, UserRole
 from app.models.farmer import Farmer
 from app.models.farm import Farm
 from app.models.tree import Tree
+from app.models.farmer_wallet import FarmerWallet
+from app.models.admin_bank_account import AdminBankAccount
 
 logger = logging.getLogger(__name__)
 
@@ -107,8 +109,33 @@ async def seed_data():
                 )
             ]
             db.add_all(trees)
+            
+            # 5. Create Farmer Wallet
+            farmer_wallet = FarmerWallet(
+                id=uuid.uuid4(),
+                farmer_id=farmer_profile.id,
+                total_earned=Decimal("0.00"),
+                available_balance=Decimal("0.00"),
+                pending_balance=Decimal("0.00"),
+                withdrawn_amount=Decimal("0.00")
+            )
+            db.add(farmer_wallet)
+            
+            # 6. Create Admin Bank Account (For payment holding)
+            admin_bank = AdminBankAccount(
+                id=uuid.uuid4(),
+                account_holder_name="FarmTree Community Foundation",
+                bank_name="ICICI Bank",
+                account_number="1234567890123456",  # Example - should be real in production
+                ifsc_code="ICIC0000001",
+                upi_id="farmtree@icici",
+                is_active=True,
+                verified=True
+            )
+            db.add(admin_bank)
+            
             await db.commit()
-            logger.info("Successfully seeded database with farms, farmers, and trees.")
+            logger.info("Successfully seeded database with farms, farmers, trees, wallets, and admin bank account.")
         except Exception as e:
             await db.rollback()
             logger.error(f"Error seeding database: {e}", exc_info=True)

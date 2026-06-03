@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { useLocation } from 'react-router-dom';
 import { api } from '../services/api';
 import { toast } from 'sonner';
+import BankAccountModal from '../components/BankAccountModal';
+import WithdrawalRequestModal from '../components/WithdrawalRequestModal';
 import {
   TrendingUp, Users, CheckCircle, XCircle, Plus,
   BookOpen, Award, DollarSign, AlertCircle, Activity, TreePine,
@@ -95,6 +97,8 @@ export function FarmerDashboard() {
 
   // Wallet State
   const [walletBalance, setWalletBalance] = useState(54890);
+  const [showBankModal, setShowBankModal] = useState(false);
+  const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
   const [payoutHistory, setPayoutHistory] = useState([
     { id: 'pay_1', amount: 14997, status: 'Completed', date: 'May 20, 2026', method: 'HDFC Bank - 4302' },
     { id: 'pay_2', amount: 8990, status: 'Completed', date: 'May 10, 2026', method: 'HDFC Bank - 4302' },
@@ -856,6 +860,57 @@ export function FarmerDashboard() {
                             <div className="flex items-center gap-1"><Droplets className="w-3.5 h-3.5 text-emerald-200" /> Soil Humidity: 65%</div>
                           </div>
                         </div>
+                      </div>
+
+                      {/* Quick Action Cards */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <motion.button
+                          whileHover={{ scale: 1.02, y: -4 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setActivePage('add-tree')}
+                          className="bg-white rounded-3xl p-6 shadow-lg border-2 border-[var(--forest-green)]/20 hover:border-[var(--forest-green)] transition-all text-left group"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="w-12 h-12 rounded-2xl bg-[var(--forest-green)]/10 flex items-center justify-center group-hover:bg-[var(--forest-green)] transition-colors">
+                              <Plus className="w-6 h-6 text-[var(--forest-green)] group-hover:text-white transition-colors" />
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-[var(--forest-green)] transition-colors" />
+                          </div>
+                          <h3 className="text-lg font-bold text-[var(--deep-forest)] mb-1">Register a Tree</h3>
+                          <p className="text-xs text-[var(--earth-brown)]">Add new trees to your farm catalog</p>
+                        </motion.button>
+
+                        <motion.button
+                          whileHover={{ scale: 1.02, y: -4 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setActivePage('trees')}
+                          className="bg-white rounded-3xl p-6 shadow-lg border-2 border-orange-200/50 hover:border-orange-500 transition-all text-left group"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center group-hover:bg-orange-500 transition-colors">
+                              <TreePine className="w-6 h-6 text-orange-500 group-hover:text-white transition-colors" />
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-orange-500 transition-colors" />
+                          </div>
+                          <h3 className="text-lg font-bold text-[var(--deep-forest)] mb-1">My Trees</h3>
+                          <p className="text-xs text-[var(--earth-brown)]">{totalTrees} trees registered</p>
+                        </motion.button>
+
+                        <motion.button
+                          whileHover={{ scale: 1.02, y: -4 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setActivePage('adoptions')}
+                          className="bg-white rounded-3xl p-6 shadow-lg border-2 border-blue-200/50 hover:border-blue-500 transition-all text-left group"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-500 transition-colors">
+                              <Users className="w-6 h-6 text-blue-500 group-hover:text-white transition-colors" />
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-blue-500 transition-colors" />
+                          </div>
+                          <h3 className="text-lg font-bold text-[var(--deep-forest)] mb-1">Adoptions</h3>
+                          <p className="text-xs text-[var(--earth-brown)]">{activeAdoptions} active guardians</p>
+                        </motion.button>
                       </div>
 
                       {/* Realtime Stats Cards */}
@@ -1980,14 +2035,7 @@ export function FarmerDashboard() {
                             <p className="text-[10px] text-gray-400 mt-2">Cleared payouts from active monthly subscriptions</p>
                           </div>
                           <button
-                            onClick={() => {
-                              if (walletBalance === 0) {
-                                toast.error('Balance is zero.');
-                                return;
-                              }
-                              setWalletBalance(0);
-                              toast.success('Payout request submitted to bank registry!');
-                            }}
+                            onClick={() => setShowWithdrawalModal(true)}
                             className="w-full py-3 bg-gradient-to-r from-[var(--forest-green)] to-[var(--leaf-green)] text-white text-xs font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
                           >
                             Submit Withdrawal Payout
@@ -1996,9 +2044,17 @@ export function FarmerDashboard() {
 
                         {/* Payout Bank info */}
                         <div className="md:col-span-2 bg-white rounded-3xl p-6 shadow border border-gray-100 space-y-4">
-                          <h3 className="font-bold text-sm text-[var(--deep-forest)] flex items-center gap-2">
-                            <CreditCard className="w-4 h-4 text-[var(--forest-green)]" /> Bank Settings & Payout Target
-                          </h3>
+                          <div className="flex justify-between items-center">
+                            <h3 className="font-bold text-sm text-[var(--deep-forest)] flex items-center gap-2">
+                              <CreditCard className="w-4 h-4 text-[var(--forest-green)]" /> Bank Settings & Payout Target
+                            </h3>
+                            <button
+                              onClick={() => setShowBankModal(true)}
+                              className="px-4 py-2 bg-green-100 text-green-700 text-xs font-bold rounded-lg hover:bg-green-200 transition-colors"
+                            >
+                              Edit
+                            </button>
+                          </div>
                           <div className="grid sm:grid-cols-2 gap-4 text-xs">
                             <div className="p-4 bg-gray-50 rounded-2xl border">
                               <span className="text-[10px] text-gray-400 font-bold block">Institution Bank Name</span>
@@ -2294,6 +2350,20 @@ export function FarmerDashboard() {
 
         </div>
       )}
+
+      {/* Bank Account Modal */}
+      <BankAccountModal
+        isOpen={showBankModal}
+        onClose={() => setShowBankModal(false)}
+        onSave={() => toast.success('Bank details updated successfully!')}
+      />
+
+      {/* Withdrawal Request Modal */}
+      <WithdrawalRequestModal
+        isOpen={showWithdrawalModal}
+        onClose={() => setShowWithdrawalModal(false)}
+        availableBalance={walletBalance}
+      />
 
     </div>
   );

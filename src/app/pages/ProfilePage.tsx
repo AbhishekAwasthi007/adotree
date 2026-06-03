@@ -3,11 +3,14 @@ import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import {
   User, Phone, Leaf, Award, Flame, Camera, Check, Loader2,
-  LogOut, TreePine, ShieldCheck, Edit3, X,
+  LogOut, TreePine, ShieldCheck, Edit3, X, Settings, DollarSign,
+  CreditCard, Globe,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { toast } from 'sonner';
+import BankAccountModal from '../components/BankAccountModal';
+import WithdrawalRequestModal from '../components/WithdrawalRequestModal';
 
 export function ProfilePage() {
   const { user, isAuthenticated, logout, refreshUserProfile, setShowAuthModal } = useAuth();
@@ -16,6 +19,8 @@ export function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [showBankModal, setShowBankModal] = useState(false);
+  const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [profileImage, setProfileImage] = useState(user?.profile_image || '');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -220,6 +225,54 @@ export function ProfilePage() {
             </motion.button>
           ))}
         </motion.div>
+
+        {/* Farmer Wallet */}
+        {(user?.role === 'farmer' || user?.role === 'admin') && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
+            className="bg-white rounded-3xl shadow-xl p-6"
+          >
+            <h3 className="text-lg font-bold text-[var(--deep-forest)] mb-4 flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-emerald-600" /> Wallet & Payouts
+            </h3>
+            
+            {/* Balance Card */}
+            <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-6 mb-4 border border-emerald-100">
+              <div className="text-xs text-emerald-700 font-bold mb-1">Available Balance</div>
+              <div className="text-3xl font-black text-emerald-600 mb-3">₹54,890</div>
+              <button
+                onClick={() => setShowWithdrawalModal(true)}
+                className="w-full py-3 bg-gradient-to-r from-[var(--forest-green)] to-[var(--leaf-green)] text-white text-sm font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
+              >
+                Withdraw to Bank
+              </button>
+            </div>
+
+            {/* Bank Details */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-[var(--earth-brown)]">
+                  <CreditCard className="w-4 h-4 text-[var(--forest-green)]" /> Bank Account
+                </div>
+                <button
+                  onClick={() => setShowBankModal(true)}
+                  className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg hover:bg-emerald-200 transition-colors"
+                >
+                  Edit
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-3 bg-gray-50 rounded-xl border">
+                  <div className="text-[10px] text-gray-400 font-bold mb-1">Bank Name</div>
+                  <div className="font-bold text-[var(--deep-forest)]">HDFC Bank</div>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-xl border">
+                  <div className="text-[10px] text-gray-400 font-bold mb-1">Account</div>
+                  <div className="font-bold text-[var(--deep-forest)]">•••• 4302</div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Logout */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
