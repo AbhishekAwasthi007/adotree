@@ -4,10 +4,19 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   TreePine, Award, Zap, Calendar, Camera, Sparkles, TrendingUp,
   MapPin, Leaf, Heart, Loader2, LogIn, ArrowLeft,
+  Sun, Droplets, Wind, X, Maximize2,
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { FloatingParticles } from '../components/FloatingParticles';
+
+function formatImageUrl(url: string) {
+  if (!url) return '';
+  if (url.startsWith('/')) {
+    return `http://localhost:8000${url}`;
+  }
+  return url;
+}
 
 export function AdoptedTreeDetail() {
   const { id } = useParams<{ id: string }>();
@@ -17,10 +26,23 @@ export function AdoptedTreeDetail() {
   const [adoption, setAdoption] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [memories, setMemories] = useState<any[]>([]);
+  const [showGallery, setShowGallery] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isRequestingPhoto, setIsRequestingPhoto] = useState(false);
   
   const [localEcoPoints, setLocalEcoPoints] = useState<number>(0);
   const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
   const [actionEffect, setActionEffect] = useState<'water' | 'nourish' | 'love' | null>(null);
+
+  const hasRequestedToday = memories.some((m: any) => {
+    if (m.memory_type !== 'live_photo_request' && m.memory_type !== 'live_photo_upload') {
+      return false;
+    }
+    const createdAtTime = new Date(m.created_at).getTime();
+    const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
+    return createdAtTime > twentyFourHoursAgo;
+  });
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -34,6 +56,12 @@ export function AdoptedTreeDetail() {
       try {
         const data = await api.adoptions.get(id);
         setAdoption(data);
+        try {
+          const memoriesData = await api.memories.list(id);
+          setMemories(memoriesData || []);
+        } catch (memErr) {
+          console.error("Failed to load memories", memErr);
+        }
         setError(null);
       } catch (err: any) {
         console.error("Failed to load adoption details", err);
@@ -80,6 +108,22 @@ export function AdoptedTreeDetail() {
     setTimeout(() => {
       setNotificationMessage(null);
     }, 4500);
+  };
+
+  const handleRequestLivePhoto = async () => {
+    if (!id) return;
+    setIsRequestingPhoto(true);
+    try {
+      await api.memories.requestLivePhoto(id);
+      setNotificationMessage("Photo request sent to the farmer! They will upload a fresh snapshot soon.");
+      // Refresh memories
+      const memoriesData = await api.memories.list(id);
+      setMemories(memoriesData || []);
+    } catch (err: any) {
+      setNotificationMessage(err.message || "Failed to send photo request.");
+    } finally {
+      setIsRequestingPhoto(false);
+    }
   };
 
   // Not logged in
@@ -213,7 +257,7 @@ export function AdoptedTreeDetail() {
             <div className="flex justify-center relative py-4">
               <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-white shadow-xl relative z-10">
                 <img
-                  src={selectedTree?.tree_images?.[0] || 'https://images.unsplash.com/photo-1775298116276-56bad682022f?w=600'}
+                  src={formatImageUrl(selectedTree?.tree_images?.[0]) || 'https://images.unsplash.com/photo-1775298116276-56bad682022f?w=600'}
                   alt={adoption.custom_tree_name}
                   className="w-full h-full object-cover"
                 />
@@ -249,6 +293,19 @@ export function AdoptedTreeDetail() {
               </div>
             </div>
 
+          </div>
+
+          {/* Live Conditions (Weather Widget) */}
+          <div className="mb-8">
+            <h3 className="text-sm font-black text-[#081C15] uppercase tracking-wider mb-4 flex items-center gap-1.5">
+              <Sun className="w-4 h-4 text-[#FFB703]" /> Live Conditions
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <WeatherItem icon={<Sun className="w-10 h-10 text-[#FFB703]"/>} label="Temperature" value="28°C" />
+              <WeatherItem icon={<Droplets className="w-10 h-10 text-[#90E0EF]"/>} label="Humidity" value="72%" />
+              <WeatherItem icon={<Wind className="w-10 h-10 text-[#52796F]"/>} label="Rainfall" value="15mm today" />
+              <WeatherItem icon={<Sun className="w-10 h-10 text-[#FFB703]"/>} label="Sunlight" value="8 hours" />
+            </div>
           </div>
 
           {/* Gamified Care Station */}
@@ -341,29 +398,149 @@ export function AdoptedTreeDetail() {
 
           {/* Primary buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
-            <Link to={`/tree/${selectedTree?.id}`} className="flex-1">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full py-4 bg-[#1B4332] hover:bg-[#081C15] text-white font-black rounded-2xl shadow-lg hover:shadow-[#1B4332]/25 text-xs flex items-center justify-center gap-1.5 transition-all animate-pulse"
-              >
-                <Camera className="w-4 h-4" /> View Tree Details & Gallery
-              </motion.button>
-            </Link>
-            <button
-              onClick={() => {
-                handleCareAction('love', 0);
-                setNotificationMessage("Farmer Ramesh Patil will send you a fresh snapshot of your tree within 24 hours!");
-              }}
-              className="px-5 py-4 bg-[#FAF9F6] border-2 border-[#D8F3DC] hover:border-[#1B4332] text-[#1B4332] font-black rounded-2xl text-xs transition-colors"
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowGallery(true)}
+              className="flex-1 py-4 bg-[#1B4332] hover:bg-[#081C15] text-white font-black rounded-2xl shadow-lg hover:shadow-[#1B4332]/25 text-xs flex items-center justify-center gap-1.5 transition-all"
             >
-              Request Live Photo
+              <Camera className="w-4 h-4" /> Tree Gallery
+            </motion.button>
+            <button
+              onClick={handleRequestLivePhoto}
+              disabled={isRequestingPhoto || hasRequestedToday}
+              className="px-5 py-4 bg-[#FAF9F6] border-2 border-[#D8F3DC] hover:border-[#1B4332] text-[#1B4332] font-black rounded-2xl text-xs transition-colors disabled:opacity-50"
+            >
+              {isRequestingPhoto ? 'Sending Request...' : hasRequestedToday ? 'Photo Requested Today' : 'Request Photo'}
             </button>
           </div>
 
         </motion.div>
 
       </div>
+
+      {/* Tree Gallery Modal */}
+      <AnimatePresence>
+        {showGallery && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowGallery(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-4xl bg-white rounded-[2.5rem] shadow-2xl z-10 overflow-hidden border border-[#1B4332]/15 flex flex-col max-h-[85vh]"
+            >
+              {/* Modal Header */}
+              <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-[#FAF9F6]">
+                <div>
+                  <span className="px-3 py-1 bg-[#D8F3DC] text-[#1B4332] font-black text-[10px] rounded-full uppercase tracking-wider">
+                    Gallery
+                  </span>
+                  <h3 className="text-2xl font-black text-[#081C15] mt-2">
+                    {adoption.custom_tree_name}'s Photo Stream
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowGallery(false)}
+                  className="p-2 rounded-full hover:bg-gray-100 text-[#52796F] transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Gallery Photos Grid */}
+              <div className="p-8 overflow-y-auto flex-1 bg-[#FAF9F6]/50">
+                {memories.filter((m: any) => m.memory_type === 'live_photo_upload').length === 0 ? (
+                  <div className="text-center py-20">
+                    <Camera className="w-16 h-16 text-[#52796F]/40 mx-auto mb-4" />
+                    <h4 className="text-lg font-bold text-[#081C15]">No uploads yet</h4>
+                    <p className="text-sm text-[#52796F] mt-1 max-w-md mx-auto">
+                      Farmer uploads will appear here after you request a live photo. Use the "Request Live Photo" button to alert the farmer!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {memories
+                      .filter((m: any) => m.memory_type === 'live_photo_upload')
+                      .map((memory: any) => (
+                        <div
+                          key={memory.id}
+                          onClick={() => setSelectedImage(formatImageUrl(memory.media?.[0]))}
+                          className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-lg hover:shadow-xl cursor-pointer transition-all duration-300 group"
+                        >
+                          <div className="relative aspect-video overflow-hidden">
+                            <img
+                              src={formatImageUrl(memory.media?.[0])}
+                              alt={memory.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-4">
+                              <div className="flex justify-end">
+                                <Maximize2 className="w-5 h-5 text-white drop-shadow" />
+                              </div>
+                              <span className="text-white text-xs font-bold">
+                                {new Date(memory.created_at).toLocaleDateString('en-IN', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric',
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="p-5">
+                            <h4 className="font-bold text-[#081C15] text-base mb-1">{memory.title}</h4>
+                            <p className="text-xs text-[#52796F] leading-relaxed">{memory.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Lightbox Modal for Large Image View */}
+      <AnimatePresence>
+        {selectedImage && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedImage(null)}
+              className="absolute inset-0 bg-black/90 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative max-w-5xl max-h-[90vh] z-10 flex flex-col items-center"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedImage(null)}
+                className="absolute top-4 right-4 p-3 bg-black/50 hover:bg-black/80 text-white rounded-full transition-colors z-20 shadow-lg"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              
+              <img
+                src={selectedImage}
+                alt="Large View"
+                className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/10"
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -412,5 +589,17 @@ function CareButton({
       <span className="text-[10px] font-black uppercase tracking-wider text-center">{label}</span>
       <span className="text-[9px] font-bold mt-0.5 opacity-80">{points}</span>
     </motion.button>
+  );
+}
+
+function WeatherItem({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
+  return (
+    <div className="flex items-center gap-4 p-4 bg-[#FAF9F6] border border-[#1B4332]/10 hover:bg-[#FAF9F6]/80 transition-colors">
+      <div className="flex-shrink-0">{icon}</div>
+      <div>
+        <div className="text-[10px] uppercase tracking-wider text-[#52796F] font-bold mb-0.5">{label}</div>
+        <div className="font-bold text-[#081C15] text-lg">{value}</div>
+      </div>
+    </div>
   );
 }

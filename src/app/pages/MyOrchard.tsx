@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   TreePine, Award, Zap, Calendar, Sparkles, MapPin, Leaf, Loader2, LogIn,
 } from 'lucide-react';
-import { api } from '../services/api';
+import { api, formatImageUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { FloatingParticles } from '../components/FloatingParticles';
 
@@ -135,7 +135,7 @@ export function MyOrchard() {
                       {/* Image frame */}
                       <div className="relative aspect-[16/10] rounded-2xl overflow-hidden mb-5 border border-[#1B4332]/10 group">
                         <img
-                          src={t?.tree_images?.[0] || 'https://images.unsplash.com/photo-1775298116276-56bad682022f?w=600'}
+                          src={formatImageUrl(t?.tree_images?.[0]) || 'https://images.unsplash.com/photo-1775298116276-56bad682022f?w=600'}
                           alt={adoption.custom_tree_name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                         />

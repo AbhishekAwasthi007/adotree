@@ -7,7 +7,7 @@ import {
   Home, Phone, ChevronRight, ChevronLeft,
 } from 'lucide-react';
 import { FloatingParticles } from '../components/FloatingParticles';
-import { api } from '../services/api';
+import { api, formatImageUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const staticTreeData = {
@@ -143,7 +143,7 @@ export function TreeDetail() {
           experience: '15 years',
           avatar: 'https://images.unsplash.com/photo-1508116916455-2857e44c161e?w=100',
         },
-        image: tree.tree_images?.[0] || 'https://images.unsplash.com/photo-1775298116276-56bad682022f?w=1200',
+        image: formatImageUrl(tree.tree_images?.[0]) || 'https://images.unsplash.com/photo-1775298116276-56bad682022f?w=1200',
         price: `₹${parseFloat(tree.price).toLocaleString('en-IN')}`,
         yield: `${tree.expected_yield} kg`,
         health: Math.round(tree.health_score * 10),

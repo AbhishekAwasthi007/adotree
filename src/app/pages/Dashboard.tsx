@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
+import { api, formatImageUrl } from '../services/api';
 import { toast } from 'sonner';
 import { FarmerDashboard } from './FarmerDashboard';
 import {
@@ -667,7 +667,7 @@ export function Dashboard() {
                         {/* Tree Image */}
                         <div className="relative h-48 bg-gray-100">
                           <img
-                            src={tree.tree_images?.[0] || 'https://images.unsplash.com/photo-1775298116276-56bad682022f?w=600'}
+                            src={formatImageUrl(tree.tree_images?.[0]) || 'https://images.unsplash.com/photo-1775298116276-56bad682022f?w=600'}
                             alt={tree.fruit_type}
                             className="w-full h-full object-cover"
                           />

@@ -1,9 +1,31 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { TreePine, Play, Users, Leaf, Heart, Globe, ArrowRight, Sprout } from 'lucide-react';
 import { FloatingParticles } from '../components/FloatingParticles';
+import { api } from '../services/api';
 
 export function LandingPage() {
+  const [stats, setStats] = useState<{
+    trees_protected: number;
+    active_farms: number;
+    tree_guardians: number;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    api.trees.getSustainabilityStats()
+      .then(data => {
+        setStats(data);
+      })
+      .catch(err => {
+        console.error("Failed to load sustainability stats", err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[var(--cream-white)] to-[var(--light-sage)]">
       <FloatingParticles />
@@ -31,27 +53,27 @@ export function LandingPage() {
           />
         </div>
 
-        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-24">
+        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-16 pb-12">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="mb-6"
+            className="mb-4"
           >
             <motion.div
               animate={{ rotate: [0, 5, -5, 0] }}
               transition={{ duration: 4, repeat: Infinity }}
-              className="inline-block mb-4"
+              className="inline-block mb-2"
             >
-              <Sprout className="w-16 h-16 text-[var(--forest-green)] mx-auto" />
+              <Sprout className="w-10 h-10 text-[var(--forest-green)] mx-auto" />
             </motion.div>
           </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-6xl md:text-8xl font-bold text-[var(--deep-forest)] mb-6 leading-tight"
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="text-4xl md:text-6xl lg:text-7xl font-bold text-[var(--deep-forest)] mb-4 leading-none tracking-tight"
           >
             Adopt a Living Tree.
             <br />
@@ -59,26 +81,26 @@ export function LandingPage() {
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-xl md:text-2xl text-[var(--earth-brown)] mb-12 max-w-3xl mx-auto leading-relaxed"
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-base md:text-lg text-[var(--earth-brown)] mb-6 max-w-2xl mx-auto leading-relaxed"
           >
             Build a lifelong connection with nature and support real farmers.
             Receive real harvests from your tree.
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-6"
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Link to="/explore">
               <motion.button
-                whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(27, 67, 50, 0.3)' }}
+                whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(27, 67, 50, 0.2)' }}
                 whileTap={{ scale: 0.95 }}
-                className="px-12 py-5 bg-gradient-to-r from-[var(--forest-green)] to-[var(--leaf-green)] text-white text-lg font-medium rounded-full shadow-2xl flex items-center gap-3 group relative overflow-hidden"
+                className="px-8 py-3.5 bg-gradient-to-r from-[var(--forest-green)] to-[var(--leaf-green)] text-white text-base font-bold rounded-full shadow-lg flex items-center gap-2 group relative overflow-hidden"
               >
                 <motion.div
                   className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"
@@ -86,7 +108,7 @@ export function LandingPage() {
                 />
                 <TreePine className="w-5 h-5" />
                 Adopt Your Tree
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </motion.button>
             </Link>
 
@@ -94,41 +116,42 @@ export function LandingPage() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-12 py-5 bg-white/80 backdrop-blur-sm text-[var(--forest-green)] text-lg font-medium rounded-full shadow-xl flex items-center gap-3 border-2 border-[var(--forest-green)]/20"
+                className="px-8 py-3.5 bg-white/80 backdrop-blur-sm text-[var(--forest-green)] text-base font-bold rounded-full shadow-md flex items-center gap-2 border-2 border-[var(--forest-green)]/20"
               >
-                <Play className="w-5 h-5" />
-                Explore Live Farms
+                <Play className="w-4 h-4" />
+                Explore Farms
               </motion.button>
             </Link>
           </motion.div>
 
           {/* Stats */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-            className="mt-20 grid grid-cols-3 gap-8 max-w-3xl mx-auto"
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="mt-8 md:mt-12 grid grid-cols-3 gap-4 md:gap-6 max-w-3xl mx-auto"
           >
-            <StatCard number="12,453" label="Trees Adopted" icon={<TreePine />} />
-            <StatCard number="847" label="Active Farms" icon={<Globe />} />
-            <StatCard number="9,821" label="Tree Guardians" icon={<Users />} />
+            <StatCard number={isLoading ? "..." : (stats?.trees_protected?.toLocaleString() || "0")} label="Trees Adopted" icon={<TreePine />} />
+            <StatCard number={isLoading ? "..." : (stats?.active_farms?.toLocaleString() || "0")} label="Active Farms" icon={<Globe />} />
+            <StatCard number={isLoading ? "..." : (stats?.tree_guardians?.toLocaleString() || "0")} label="Tree Guardians" icon={<Users />} />
           </motion.div>
         </div>
 
         {/* Scroll Indicator */}
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1, y: [0, 10, 0] }}
+          animate={{ opacity: 1, y: [0, 6, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
-          className="absolute bottom-10 left-1/2 -translate-x-1/2"
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 cursor-pointer z-10"
         >
-          <div className="w-6 h-10 border-2 border-[var(--forest-green)] rounded-full flex items-start justify-center p-2">
+          <div className="w-5 h-8 border-2 border-[var(--forest-green)] rounded-full flex items-start justify-center p-1 bg-white/20 backdrop-blur-sm shadow-sm">
             <motion.div
-              animate={{ y: [0, 12, 0] }}
+              animate={{ y: [0, 8, 0] }}
               transition={{ duration: 1.5, repeat: Infinity }}
-              className="w-1.5 h-1.5 bg-[var(--forest-green)] rounded-full"
+              className="w-1 h-1.5 bg-[var(--forest-green)] rounded-full"
             />
           </div>
+          <span className="text-[9px] uppercase tracking-widest text-[var(--forest-green)] font-black">Scroll</span>
         </motion.div>
       </section>
 

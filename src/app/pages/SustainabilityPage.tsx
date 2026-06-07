@@ -1,8 +1,30 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Leaf, Droplets, Recycle, TreePine, Heart, Globe } from 'lucide-react';
 import { FloatingParticles } from '../components/FloatingParticles';
+import { api } from '../services/api';
 
 export function SustainabilityPage() {
+  const [stats, setStats] = useState<{
+    trees_protected: number;
+    co2_absorbed: string;
+    water_conserved: string;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    api.trees.getSustainabilityStats()
+      .then(data => {
+        setStats(data);
+      })
+      .catch(err => {
+        console.error("Failed to load sustainability stats", err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[var(--cream-white)] to-[var(--light-sage)] pt-24 pb-20">
       <FloatingParticles />
@@ -26,21 +48,21 @@ export function SustainabilityPage() {
         <div className="grid md:grid-cols-3 gap-8 mb-20">
           <ImpactCard
             icon={<TreePine className="w-12 h-12" />}
-            number="12,453"
+            number={isLoading ? "..." : (stats?.trees_protected?.toLocaleString() || "0")}
             label="Trees Protected"
             description="Living trees under guardian care"
             color="text-[var(--forest-green)]"
           />
           <ImpactCard
             icon={<Globe className="w-12 h-12" />}
-            number="847 tons"
+            number={isLoading ? "..." : (stats?.co2_absorbed || "0 kg")}
             label="CO₂ Absorbed"
             description="Carbon offset this year"
             color="text-[var(--sky-blue)]"
           />
           <ImpactCard
             icon={<Droplets className="w-12 h-12" />}
-            number="2.4M liters"
+            number={isLoading ? "..." : (stats?.water_conserved || "0 liters")}
             label="Water Conserved"
             description="Through sustainable farming"
             color="text-[var(--sunset-orange)]"
@@ -51,8 +73,8 @@ export function SustainabilityPage() {
         <div className="grid md:grid-cols-2 gap-8">
           <BenefitCard
             icon={<Leaf />}
-            title="100% Organic Practices"
-            description="No pesticides, no chemicals. Just pure, natural farming methods that respect the earth."
+            title="Organic Practices"
+            description="Natural farming methods that respect the earth."
           />
           <BenefitCard
             icon={<Recycle />}
@@ -61,13 +83,13 @@ export function SustainabilityPage() {
           />
           <BenefitCard
             icon={<Heart />}
-            title="Fair Trade Certified"
+            title="Fair Trade"
             description="Farmers receive fair compensation. Your adoption directly supports their livelihood."
           />
           <BenefitCard
             icon={<TreePine />}
             title="Biodiversity Protection"
-            description="Each farm is an ecosystem. Native species, pollinators, and wildlife thrive together."
+            description="Each farm is an ecosystem."
           />
         </div>
       </div>

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, MapPin, Leaf, Heart, Camera, Sparkles, TreePine, Navigation, X, Loader2 } from 'lucide-react';
 import { FloatingParticles } from '../components/FloatingParticles';
-import { api } from '../services/api';
+import { api, formatImageUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { haversineKm, geocode, FARM_COORDS } from '../utils/geo';
 
@@ -92,7 +92,7 @@ export function ExplorePage() {
         type: tree.fruit_type,
         location: tree.farm?.farmer?.location || 'Ratnagiri, Maharashtra',
         farmer: tree.farm?.farmer?.farm_name || 'Ramesh Patil',
-        image: tree.tree_images?.[0] || 'https://images.unsplash.com/photo-1775298116276-56bad682022f?w=600',
+        image: formatImageUrl(tree.tree_images?.[0]) || 'https://images.unsplash.com/photo-1775298116276-56bad682022f?w=600',
         price: `₹${parseFloat(tree.price).toLocaleString('en-IN')}`,
         yield: `${tree.expected_yield} kg`,
         health: Math.round(tree.health_score * 10),

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { useLocation } from 'react-router-dom';
-import { api } from '../services/api';
+import { api, formatImageUrl } from '../services/api';
 import { toast } from 'sonner';
 import {
   TrendingUp, Users, CheckCircle, XCircle, Plus,
@@ -12,7 +12,8 @@ import {
   Check, ArrowRight, ShieldCheck, Heart, User, Clock, Trash2,
   MessageSquare, Send, Sparkle, Eye, ShieldAlert, Star, Settings,
   Grid, Bell, HelpCircle, Phone, CreditCard, PieChart, Volume2,
-  ListOrdered, Leaf, RefreshCw
+  ListOrdered, Leaf, RefreshCw,
+  Video
 } from 'lucide-react';
 
 export function FarmerDashboard() {
@@ -52,6 +53,8 @@ export function FarmerDashboard() {
   const [adoptions, setAdoptions] = useState<any[]>([]);
   const [harvests, setHarvests] = useState<any[]>([]);
   const [deliveries, setDeliveries] = useState<any[]>([]);
+  const [photoRequests, setPhotoRequests] = useState<any[]>([]);
+  const [uploadingRequestPhoto, setUploadingRequestPhoto] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isUploadingTreeImage, setIsUploadingTreeImage] = useState<boolean>(false);
   const [isUploadingFarmImage, setIsUploadingFarmImage] = useState<boolean>(false);
@@ -287,6 +290,14 @@ export function FarmerDashboard() {
         { id: 'd2', recipient: 'Dr. Priya Mehta', phone: '+91 91234 56789', address: '12, Orchid Villa, Lane 5', address2: 'Koregaon Park', city: 'Pune', state: 'Maharashtra', pincode: '411001', trackingNo: 'TR-DEL-P9841B', status: 'shipped', progress: 65, harvestId: 'h2', eta: 'May 22, 2026' },
         { id: 'd3', recipient: 'Arjun Nair', phone: '+91 87654 32109', address: '301, Green Leaf Tower, 100 Feet Road', address2: 'Indiranagar', city: 'Bengaluru', state: 'Karnataka', pincode: '560038', trackingNo: 'TR-DEL-B7712C', status: 'delivered', progress: 100, harvestId: 'h3', eta: 'Delivered Apr 30, 2026' },
       ]);
+
+      // Photo requests
+      try {
+        const reqs = await api.farmer.getPhotoRequests();
+        setPhotoRequests(reqs || []);
+      } catch (reqErr) {
+        console.error("Failed loading photo requests", reqErr);
+      }
     } catch (err) {
       console.error("Failed loading data inside Farmer OS", err);
     } finally {
@@ -580,6 +591,26 @@ export function FarmerDashboard() {
       toast.error(err.message || 'Failed to upload farm image.');
     } finally {
       setIsUploadingFarmImage(false);
+    }
+  };
+
+  const handleUploadRequestPhoto = async (requestId: string, file: File) => {
+    setUploadingRequestPhoto(true);
+    try {
+      const result = await api.farmer.uploadImage(file);
+      if (result && result.url) {
+        await api.farmer.uploadRequestedPhoto(requestId, result.url);
+        toast.success('Requested live photo uploaded successfully! 📸');
+        // Refresh photo requests
+        const reqs = await api.farmer.getPhotoRequests().catch(() => []);
+        setPhotoRequests(reqs || []);
+      } else {
+        throw new Error('Image upload failed.');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to upload photo.');
+    } finally {
+      setUploadingRequestPhoto(false);
     }
   };
 
@@ -1001,7 +1032,7 @@ export function FarmerDashboard() {
                             <div>
                               <div className="relative h-48 bg-gray-100">
                                 <img
-                                  src={tree.tree_images?.[0] || 'https://images.unsplash.com/photo-1775298116276-56bad682022f?w=600'}
+                                  src={formatImageUrl(tree.tree_images?.[0]) || 'https://images.unsplash.com/photo-1775298116276-56bad682022f?w=600'}
                                   alt={tree.fruit_type}
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 />
@@ -1292,7 +1323,7 @@ export function FarmerDashboard() {
                             {/* Main Tree Card details Left */}
                             <div className="bg-white rounded-3xl p-6 shadow border border-gray-100 space-y-4">
                               <div className="h-56 rounded-2xl overflow-hidden">
-                                <img src={targetTree.tree_images?.[0]} alt="tree" className="w-full h-full object-cover" />
+                                <img src={formatImageUrl(targetTree.tree_images?.[0])} alt="tree" className="w-full h-full object-cover" />
                               </div>
                               <div>
                                 <h3 className="text-xl font-bold text-[var(--deep-forest)]">Royal {targetTree.fruit_type}</h3>
@@ -1428,6 +1459,60 @@ export function FarmerDashboard() {
                         </div>
                       </div>
 
+                      {/* Live Photo Requests Section */}
+                      {photoRequests.length > 0 && (
+                        <div className="bg-white rounded-3xl p-6 shadow-lg border border-[#1B4332]/10 space-y-4">
+                          <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                            <h3 className="font-bold text-[#081C15] flex items-center gap-2 text-base">
+                              <Camera className="w-5 h-5 text-[#52B788]" /> Live Photo Requests ({photoRequests.length})
+                            </h3>
+                            <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                              Action Required
+                            </span>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {photoRequests.map((req) => (
+                              <div key={req.id} className="p-4 bg-[#FAF9F6] border border-[#1B4332]/5 rounded-2xl flex items-center justify-between gap-4">
+                                <div className="min-w-0">
+                                  <h4 className="font-bold text-sm text-[#081C15] truncate">
+                                    {req.custom_tree_name} ({req.fruit_type})
+                                  </h4>
+                                  <p className="text-xs text-[#52796F] mt-0.5">{req.description}</p>
+                                  <p className="text-[10px] text-gray-400 mt-1">
+                                    Requested on {new Date(req.created_at).toLocaleDateString('en-IN', {
+                                      day: 'numeric',
+                                      month: 'short',
+                                    })}
+                                  </p>
+                                </div>
+                                <div className="flex-shrink-0">
+                                  <input
+                                    type="file"
+                                    id={`upload-req-${req.id}`}
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        handleUploadRequestPhoto(req.id, file);
+                                      }
+                                    }}
+                                  />
+                                  <button
+                                    onClick={() => document.getElementById(`upload-req-${req.id}`)?.click()}
+                                    disabled={uploadingRequestPhoto}
+                                    className="px-4 py-2 bg-[var(--forest-green)] hover:bg-[var(--deep-forest)] text-white rounded-xl font-bold text-xs flex items-center gap-1 transition-all disabled:opacity-50"
+                                  >
+                                    Upload Photo 📸
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Cards */}
                       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {adoptions
@@ -1444,7 +1529,7 @@ export function FarmerDashboard() {
                                 {/* Tree image banner */}
                                 <div className="h-28 bg-gradient-to-br from-[var(--forest-green)] to-[var(--leaf-green)] relative overflow-hidden">
                                   {associatedTree?.tree_images?.[0] && (
-                                    <img src={associatedTree.tree_images[0]} alt="tree" className="w-full h-full object-cover opacity-60" />
+                                    <img src={formatImageUrl(associatedTree.tree_images[0])} alt="tree" className="w-full h-full object-cover opacity-60" />
                                   )}
                                   <div className="absolute inset-0 flex items-end p-4">
                                     <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${statusColors[ad.status] || 'bg-gray-100 text-gray-500'}`}>
@@ -1648,8 +1733,8 @@ export function FarmerDashboard() {
                         {harvests
                           .filter(h => harvestFilter === 'all' || h.status === harvestFilter)
                           .map((h) => {
-                            const statusStep = { processing: 1, shipped: 2, delivered: 3 }[h.status] || 0;
-                            const gradeColor = { A: 'text-emerald-600 bg-emerald-50 border-emerald-100', B: 'text-blue-600 bg-blue-50 border-blue-100', C: 'text-gray-600 bg-gray-50 border-gray-100' }[h.grade] || '';
+                            const statusStep = (({ processing: 1, shipped: 2, delivered: 3 } as Record<string, number>)[h.status]) || 0;
+                            const gradeColor = (({ A: 'text-emerald-600 bg-emerald-50 border-emerald-100', B: 'text-blue-600 bg-blue-50 border-blue-100', C: 'text-gray-600 bg-gray-50 border-gray-100' } as Record<string, string>)[h.grade]) || '';
                             const steps = ['Harvested', 'Cleaned & Packed', 'Shipped', 'Delivered'];
                             return (
                               <div key={h.id} className="bg-white rounded-3xl p-6 shadow border border-gray-100 space-y-4 hover:shadow-lg transition-all">

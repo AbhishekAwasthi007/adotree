@@ -1,5 +1,13 @@
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
+export function formatImageUrl(url: string | undefined | null) {
+  if (!url) return '';
+  if (url.startsWith('/')) {
+    return `http://localhost:8000${url}`;
+  }
+  return url;
+}
+
 interface RequestOptions extends RequestInit {
   headers?: Record<string, string>;
 }
@@ -130,6 +138,7 @@ export const api = {
       return fetchAPI(`/trees${query}`);
     },
     get: (id: string) => fetchAPI(`/trees/${id}`),
+    getSustainabilityStats: () => fetchAPI('/trees/sustainability-stats'),
   },
   // Farms Catalog (used internally by Farmer OS for tree registration locations)
   farms: {
@@ -177,7 +186,8 @@ export const api = {
 
   // Timeline / Memories
   memories: {
-    list: (adoptionId: string) => fetchAPI(`/memories/${adoptionId}`),
+    list: (adoptionId: string) => fetchAPI(`/memories/?adoption_id=${adoptionId}`),
+    requestLivePhoto: (adoptionId: string) => fetchAPI(`/memories/${adoptionId}/request-photo`, { method: 'POST' }),
   },
 
   // Admin Portal & Analytics
@@ -239,6 +249,11 @@ export const api = {
         body: formData,
       });
     },
+    getPhotoRequests: () => fetchAPI('/farmer/photo-requests'),
+    uploadRequestedPhoto: (requestId: string, mediaUrl: string) =>
+      fetchAPI(`/farmer/photo-requests/${requestId}/upload?media_url=${encodeURIComponent(mediaUrl)}`, {
+        method: 'POST',
+      }),
   },
 
   // Chat

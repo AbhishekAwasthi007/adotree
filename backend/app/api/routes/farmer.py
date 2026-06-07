@@ -343,3 +343,99 @@ async def farmer_upload_image(
         )
     url = await storage_service.upload_file(file, folder="trees")
     return {"url": url}
+
+@router.get("/photo-requests")
+async def list_photo_requests(
+    current_farmer: Farmer = Depends(get_current_farmer),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Lists all pending/active live photo requests for this farmer.
+    """
+    # 1. Get all farm IDs for this farmer
+    query_farms = select(Farm.id).where(Farm.farmer_id == current_farmer.id)
+    result_farms = await db.execute(query_farms)
+    farm_ids = result_farms.scalars().all()
+    
+    if not farm_ids:
+        return []
+        
+    # 2. Get all tree IDs for this farmer
+    query_trees = select(Tree.id).where(Tree.farm_id.in_(farm_ids))
+    result_trees = await db.execute(query_trees)
+    tree_ids = result_trees.scalars().all()
+    
+    if not tree_ids:
+        return []
+        
+    # 3. Get all adoptions for these trees
+    query_adoptions = select(Adoption.id).where(Adoption.tree_id.in_(tree_ids))
+    result_adoptions = await db.execute(query_adoptions)
+    adoption_ids = result_adoptions.scalars().all()
+    
+    if not adoption_ids:
+        return []
+        
+    # 4. Find all memories of type "live_photo_request"
+    query_requests = select(TreeMemory).options(
+        selectinload(TreeMemory.adoption).selectinload(Adoption.tree)
+    ).where(
+        (TreeMemory.adoption_id.in_(adoption_ids)) &
+        (TreeMemory.memory_type == "live_photo_request")
+    ).order_by(TreeMemory.created_at.desc())
+    result_requests = await db.execute(query_requests)
+    requests = result_requests.scalars().all()
+    
+    return [
+        {
+            "id": str(r.id),
+            "adoption_id": str(r.adoption_id),
+            "custom_tree_name": r.adoption.custom_tree_name,
+            "tree_id": str(r.adoption.tree_id),
+            "fruit_type": r.adoption.tree.fruit_type,
+            "title": r.title,
+            "description": r.description,
+            "created_at": r.created_at.isoformat(),
+        }
+        for r in requests
+    ]
+
+@router.post("/photo-requests/{request_id}/upload")
+async def upload_requested_photo(
+    request_id: uuid.UUID,
+    media_url: str,
+    current_farmer: Farmer = Depends(get_current_farmer),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Fulfills a live photo request by uploading the snapshot.
+    """
+    from datetime import datetime, timezone
+
+    # 1. Fetch request memory
+    query_request = select(TreeMemory).options(
+        selectinload(TreeMemory.adoption).selectinload(Adoption.tree).selectinload(Tree.farm)
+    ).where(TreeMemory.id == request_id)
+    result_request = await db.execute(query_request)
+    request_memory = result_request.scalar_one_or_none()
+    
+    if not request_memory:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found.")
+        
+    # 2. Check ownership
+    if request_memory.adoption.tree.farm.farmer_id != current_farmer.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. This tree is not registered to your farm."
+        )
+        
+    # 3. Update memory type to live_photo_upload and attach the photo url
+    request_memory.memory_type = "live_photo_upload"
+    request_memory.title = "Live Photo Update 📸"
+    request_memory.description = "Here is the fresh snapshot of your tree uploaded by the farmer!"
+    request_memory.media = [media_url]
+    request_memory.created_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    
+    db.add(request_memory)
+    await db.commit()
+    return {"status": "success", "message": "Photo uploaded successfully."}
