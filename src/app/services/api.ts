@@ -199,6 +199,13 @@ export const api = {
         method: 'PUT',
       }),
     getAnalytics: () => fetchAPI('/admin/analytics'),
+    getTransactions: () => fetchAPI('/admin/transactions'),
+    getPendingCommissions: () => fetchAPI('/admin/pending-commissions'),
+    getCommission: (id: string) => fetchAPI(`/admin/commissions/${id}`),
+    releasePayment: (commissionId: string) =>
+      fetchAPI(`/admin/release-payment/${commissionId}`, {
+        method: 'POST',
+      }),
   },
 
   // Farmer Dashboard Panel
@@ -249,12 +256,32 @@ export const api = {
         body: formData,
       });
     },
-    getPhotoRequests: () => fetchAPI('/farmer/photo-requests'),
+     //photo upload request
+     getPhotoRequests: () => fetchAPI('/farmer/photo-requests'),
     uploadRequestedPhoto: (requestId: string, mediaUrl: string) =>
       fetchAPI(`/farmer/photo-requests/${requestId}/upload?media_url=${encodeURIComponent(mediaUrl)}`, {
         method: 'POST',
       }),
-  },
+    // Wallet & Payments
+    getWallet: () => fetchAPI('/farmer/wallet'),
+    updateBankDetails: (payload: {
+      bank_account_holder?: string;
+      bank_name?: string;
+      bank_account_number?: string;
+      bank_ifsc_code?: string;
+      upi_id?: string;
+    }) =>
+      fetchAPI('/farmer/wallet', {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }),
+    getTransactions: () => fetchAPI('/farmer/transactions'),
+    getEarningsSummary: () => fetchAPI('/farmer/earnings-summary'),
+    requestWithdrawal: (payload: { amount: number; withdrawal_method: 'bank' | 'upi' }) =>
+      fetchAPI('/farmer/request-withdrawal', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),  },
 
   // Chat
   chat: {

@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
+from typing import Optional
 from sqlalchemy import String, Numeric, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
@@ -10,12 +11,16 @@ class Payment(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    adoption_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("adoptions.id", ondelete="SET NULL"), nullable=True, index=True)
     amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     payment_gateway: Mapped[str] = mapped_column(String(50), default="Razorpay", nullable=False)
+    order_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
     transaction_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False) # pending, completed, failed, refunded
     
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
 
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="payments")
+    adoption: Mapped[Optional["Adoption"]] = relationship("Adoption", uselist=False)

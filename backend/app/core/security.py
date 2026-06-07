@@ -1,11 +1,10 @@
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, Set
 from jose import JWTError, jwt
-import redis.asyncio as redis
 from app.core.config import settings
 
-# Initialize async redis connection
-redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+# In-memory token storage for development
+_refresh_tokens: Dict[str, Set[str]] = {}  # user_id -> set of active tokens
 
 async def create_access_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None) -> str:
     if expires_delta:
@@ -26,12 +25,11 @@ async def create_refresh_token(subject: Union[str, Any], expires_delta: Optional
     to_encode = {"exp": expire, "sub": str(subject), "type": "refresh"}
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     
-    # Store refresh token in Redis to implement token rotation and instant revocation
+    # Store refresh token in memory
     user_id = str(subject)
-    redis_key = f"refresh_token:{user_id}:{encoded_jwt}"
-    ttl_seconds = int((expire - datetime.now(timezone.utc)).total_seconds())
-    if ttl_seconds > 0:
-        await redis_client.setex(redis_key, ttl_seconds, "active")
+    if user_id not in _refresh_tokens:
+        _refresh_tokens[user_id] = set()
+    _refresh_tokens[user_id].add(encoded_jwt)
         
     return encoded_jwt
 
@@ -45,16 +43,14 @@ async def verify_token(token: str, token_type: str = "access") -> Optional[str]:
         return None
 
 async def rotate_refresh_token(user_id: str, old_refresh_token: str) -> Optional[Dict[str, str]]:
-    # Check if the old token is active in Redis
-    redis_key = f"refresh_token:{user_id}:{old_refresh_token}"
-    exists = await redis_client.exists(redis_key)
-    if not exists:
+    # Check if the old token is active
+    if user_id not in _refresh_tokens or old_refresh_token not in _refresh_tokens[user_id]:
         # Token reuse detected! Revoke all tokens for this user as a security measure
         await revoke_all_user_tokens(user_id)
         return None
         
     # Delete old token
-    await redis_client.delete(redis_key)
+    _refresh_tokens[user_id].discard(old_refresh_token)
     
     # Issue new access and refresh tokens
     new_access = await create_access_token(user_id)
@@ -63,12 +59,10 @@ async def rotate_refresh_token(user_id: str, old_refresh_token: str) -> Optional
     return {"access_token": new_access, "refresh_token": new_refresh}
 
 async def revoke_refresh_token(user_id: str, refresh_token: str) -> None:
-    redis_key = f"refresh_token:{user_id}:{refresh_token}"
-    await redis_client.delete(redis_key)
+    if user_id in _refresh_tokens:
+        _refresh_tokens[user_id].discard(refresh_token)
 
 async def revoke_all_user_tokens(user_id: str) -> None:
-    # Find all refresh tokens matching this user and delete them
-    pattern = f"refresh_token:{user_id}:*"
-    keys = await redis_client.keys(pattern)
-    if keys:
-        await redis_client.delete(*keys)
+    # Delete all refresh tokens for this user
+    if user_id in _refresh_tokens:
+        _refresh_tokens[user_id].clear()

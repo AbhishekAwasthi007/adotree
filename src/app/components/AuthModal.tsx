@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Phone, Lock, Sparkles, AlertCircle, CheckCircle, TreePine, Users, Leaf, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export function AuthModal() {
   const { showAuthModal, setShowAuthModal, sendOTP, verifyOTP } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState<'role' | 'mobile' | 'otp' | 'name' | 'success' | 'pending'>('role');
   const [loginAs, setLoginAs] = useState<'user' | 'farmer'>('user');
   const [mobile, setMobile] = useState('');
@@ -65,7 +67,12 @@ export function AuthModal() {
         setStep('pending');
       } else {
         setStep('success');
-        setTimeout(() => resetAndClose(), 1500);
+        setTimeout(() => {
+          resetAndClose();
+          if (loginAs === 'farmer' && result?.farmer_status === 'approved') {
+            navigate('/dashboard');
+          }
+        }, 1500);
       }
     } catch (err: any) {
       setError(err.message || 'Incorrect verification code. Please try again.');
@@ -89,7 +96,12 @@ export function AuthModal() {
         setStep('pending');
       } else {
         setStep('success');
-        setTimeout(() => resetAndClose(), 1500);
+        setTimeout(() => {
+          resetAndClose();
+          if (loginAs === 'farmer' && result?.farmer_status === 'approved') {
+            navigate('/dashboard');
+          }
+        }, 1500);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to save name.');
